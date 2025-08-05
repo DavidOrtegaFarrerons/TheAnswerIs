@@ -3,32 +3,43 @@
 {% block title %}Presenter - Play{% endblock %}
 
 {% block body %}
-    <div class="min-h-screen bg-neutral-900 flex items-center justify-center p-4">
-        <div class="w-full max-w-3xl space-y-6">
-            <div id="question-text" class="rounded-2xl border-4 border-blue-600 bg-neutral-800 text-white text-center text-2xl font-semibold p-8 min-h-[5rem]">
+
+    <div class="min-h-screen bg-gradient-to-br from-purple-700 via-indigo-700 to-blue-700 flex flex-col items-center justify-center p-4">
+        <div class="w-full max-w-3xl rounded-3xl bg-neutral-900/80 backdrop-blur-md shadow-2xl shadow-black/60 p-8 space-y-8">
+
+            <div class="flex justify-center gap-2" id="stepper">
+                {% for i in 1..15 %}
+                    <div id="step-{{ i }}"
+                         class="w-7 h-7 rounded-full border-2 border-blue-600 text-white text-xs font-bold flex items-center justify-center bg-neutral-800/80 transition-all duration-150">
+                        {{ i }}
+                    </div>
+                {% endfor %}
             </div>
+
+            <div id="question-text" class="rounded-2xl border-4 border-blue-600 bg-neutral-800/90 text-white text-center text-2xl font-semibold p-8 min-h-[5rem] flex items-center justify-center"></div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6" id="answer-container">
                 {% for key in ['a', 'b', 'c', 'd'] %}
                     <button
                         data-key="{{ key }}"
                         id="answer-{{ key }}"
-                        class="answer-button flex items-center gap-3 rounded-xl border-2 border-blue-600 bg-neutral-800 text-left text-white px-6 py-4 transition-all duration-150 ease-out hover:bg-blue-600 focus:outline-none"
-                    >
+                        class="answer-button flex items-center gap-3 rounded-xl border-2 border-blue-600 bg-neutral-800/80 text-left text-white px-6 py-4 transition-all duration-150 hover:bg-blue-600/80 hover:border-yellow-400 focus:outline-none">
                         <span class="font-bold">{{ key|upper }}.</span>
                         <span class="answer-text"></span>
                     </button>
                 {% endfor %}
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6" id="correct-answer-container">
-                <p id="correct-answer" class="text-green-500 font-bold text-2xl"></p>
-            </div>
-        </div>
 
-        <div class="mt-8 text-center hidden" id="next-question-container">
-            <button id="next-question-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition">
-                Load Next Question
-            </button>
+            <div class="text-center" id="correct-answer-container">
+                <p id="correct-answer" class="hidden text-green-400 font-extrabold text-2xl"></p>
+            </div>
+
+            <div class="w-full flex justify-center hidden" id="next-question-container">
+                <button id="next-question-button"
+                        class=" bg-yellow-500 hover:bg-yellow-400 text-neutral-900 font-semibold py-3 px-8 rounded-full shadow-lg shadow-yellow-800/30 transition-transform duration-150 hover:scale-105 active:scale-95">
+                    Siguiente pregunta
+                </button>
+            </div>
         </div>
     </div>
 
@@ -36,7 +47,7 @@
         document.addEventListener('turbo:load', () => {
 
         });
-        const answers = {
+        let answers = {
             a: document.getElementById('answer-a'),
             b: document.getElementById('answer-b'),
             c: document.getElementById('answer-c'),
@@ -46,6 +57,7 @@
         let revealed = {};
         let correctAnswer = null;
         let selectedBtn = null;
+        let currentQuestionIndex = 0;
 
         function setButtonsEnabled(enabled) {
             Object.values(answers).forEach(btn => {
@@ -97,6 +109,10 @@
                         btn.classList.remove('ring-4', 'ring-yellow-400', 'scale-105');
                     });
                     button.classList.add('ring-4', 'ring-yellow-400', 'scale-105');
+
+                    fetch('/game/presenter/{{ game.presenterToken }}/select-answer/' + key, {
+                        method: 'POST'
+                    })
                 }
             });
         });
@@ -110,7 +126,17 @@
                 selectedBtn = null;
 
                 Object.entries(answers).forEach(([key, el]) => {
-                    el.textContent = key.toUpperCase();
+                    const answerPrefix = el.querySelector('span.font-bold');
+                    const answerText = el.querySelector('span.answer-text');
+
+                    if (answerPrefix) {
+                        answerPrefix.textContent = `${key.toUpperCase()}.`;
+                    }
+
+                    if (answerText) {
+                        answerText.textContent = '';
+                    }
+
                     el.className = 'answer-button flex items-center gap-3 rounded-xl border-2 border-blue-600 bg-neutral-800 text-left text-white px-6 py-4 transition-all duration-150 ease-out hover:bg-blue-600 focus:outline-none';
                 });
 
@@ -118,6 +144,24 @@
                 document.getElementById('next-question-container').classList.add('hidden');
             });
         });
+
+        function highlightStep(index) {
+            for (let i = 1; i <= 15; i++) {
+                const step = document.getElementById(`step-${i}`);
+                if (!step) continue;
+
+                if (i < index) {
+                    step.classList.add('bg-blue-600', 'text-white');
+                    step.classList.remove('bg-neutral-800');
+                } else if (i === index) {
+                    step.classList.add('bg-yellow-400', 'text-black');
+                    step.classList.remove('bg-neutral-800', 'text-white');
+                } else {
+                    step.classList.remove('bg-blue-600', 'bg-yellow-400', 'text-black');
+                    step.classList.add('bg-neutral-800', 'text-white');
+                }
+            }
+        }
 
         if (typeof window.eventSource !== 'undefined') {
             window.eventSource.close();
@@ -129,6 +173,8 @@
             const data = JSON.parse(event.data);
 
             if (data.type === 'QUESTION_REVEALED') {
+                currentQuestionIndex += 1;
+                highlightStep(currentQuestionIndex);
                 document.getElementById('question-text').textContent = data.payload.question;
 
             }
@@ -178,6 +224,10 @@
                 if (btnContainer) {
                     btnContainer.classList.remove('hidden');
                 }
+            }
+
+            if (data.type === 'END_OF_GAME') {
+                window.location.href = '/game/presenter/end';
             }
         };
     </script>

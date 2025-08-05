@@ -39,4 +39,9 @@ class GameContestantController extends AbstractController
         return $this->render('game/contestant/play.html.twig', ['game' => $game]);
     }
 
+    #[Route('/game/contestant/end', name: 'game.contestant.end', methods: ['GET'])]
+    public function endAction() {
+        return $this->render('game/contestant/end.html.twig');
+    }
+
 }

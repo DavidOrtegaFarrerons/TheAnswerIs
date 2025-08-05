@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\Contest;
 use App\Entity\Game;
 use App\Entity\Round;
+use App\Enum\Difficulty;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -25,7 +26,14 @@ class RoundRepository extends ServiceEntityRepository
     {
         $round = new Round();
         $round->setGame($game);
-        $round->setQuestion($this->questionRepository->findQuestionByContestAndGame($contest, $game));
+        $difficulty = Difficulty::EASY;
+
+        if ($game->getRounds()->count() > 5) {
+            $difficulty = Difficulty::MEDIUM;
+        } else if ($game->getRounds()->count() > 10) {
+            $difficulty = Difficulty::HARD;
+        }
+        $round->setQuestion($this->questionRepository->findQuestionByContestAndGameAndDifficulty($contest, $game, $difficulty));
         $round->setQuestionNumber($game->getRounds()->count() + 1);
         $round->setStartedAt(new \DateTimeImmutable());
         $this->getEntityManager()->persist($round);
@@ -39,7 +47,7 @@ class RoundRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('r')
             ->andWhere('r.game = :game')
             ->setParameter('game', $game)
-            ->orderBy('r.startedAt', 'ASC')
+            ->orderBy('r.startedAt', 'DESC')
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult()

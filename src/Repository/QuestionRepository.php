@@ -6,6 +6,7 @@ use App\Entity\Contest;
 use App\Entity\Game;
 use App\Entity\Question;
 use App\Entity\Round;
+use App\Enum\Difficulty;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Uid\Uuid;
@@ -20,7 +21,7 @@ class QuestionRepository extends ServiceEntityRepository
         parent::__construct($registry, Question::class);
     }
 
-    public function findQuestionByContestAndGame(Contest $contest, Game $game): ?Question
+    public function findQuestionByContestAndGameAndDifficulty(Contest $contest, Game $game, Difficulty $difficulty): ?Question
     {
         $usedQuestionIds = array_map(
             fn (Round $round) => $round->getQuestion(),
@@ -30,8 +31,10 @@ class QuestionRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('q')
             ->where('q.contestId = :contest')
             ->andWhere('q.id NOT IN (:usedIds)')
+            ->andWhere('q.difficulty = (:difficulty)')
             ->setParameter('contest', $contest)
             ->setParameter('usedIds', $usedQuestionIds ?: [Uuid::v4()])
+            ->setParameter('difficulty', $difficulty)
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();
