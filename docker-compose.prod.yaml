@@ -1,0 +1,20 @@
+services:
+    caddy:
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - ./Caddyfile.prod:/etc/caddy/Caddyfile:ro
+            # In prod, Caddy serves static assets from the php image via an internal mount path.
+            # If you prefer serving straight from the repo, uncomment the next line:
+            # - .:/srv/app:ro
+
+    php:
+        environment:
+            APP_ENV: prod
+        # No bind mount in prod: the built image contains the code/vendor/assets
+        volumes: []
+
+    node:
+        # not needed at runtime in prod; keep available for one-off builds
+        profiles: ["build-only"]

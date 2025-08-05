@@ -1,0 +1,16 @@
+:80 {
+  encode zstd gzip
+  root * /srv/app/public
+
+  php_fastcgi php:9000 {
+    try_files {path} /index.php?{query}
+  }
+
+  file_server
+
+  @mercure path /.well-known/mercure* /hub*
+  reverse_proxy @mercure mercure:80
+
+  @static path *.css *.js *.mjs *.png *.jpg *.jpeg *.gif *.svg *.ico *.woff *.woff2 *.ttf *.eot
+  header @static Cache-Control "public, max-age=31536000, immutable"
+}
