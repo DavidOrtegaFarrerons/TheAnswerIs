@@ -1,0 +1,39 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Waiting Room{% endblock %}
+
+{% block body %}
+    <div class="min-h-screen bg-gray-100 flex items-center justify-center px-4">
+        <div class="bg-white rounded-2xl shadow-md p-8 max-w-md w-full text-center">
+            <h1 class="text-2xl font-bold text-gray-800 mb-4">Waiting for Game Master...</h1>
+            <p class="text-gray-600 mb-6">You have joined the game. Please wait until the Game Master starts the quiz.</p>
+
+            <div class="flex justify-center">
+                <svg class="animate-spin h-6 w-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        fetch('/api/game/{{ game.id }}/contestant-joined', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({"contestantStatus": "joined"})
+        });
+
+        const eventSource = new EventSource('{{ mercure("/game/" ~ game.id ~ "/" ~ game.publicToken) }}');
+
+        eventSource.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+
+            if (data.type === 'GAME_STARTED') {
+                window.location.href = "{{ path('game.contestant.start', { id: game.id, publicToken: game.publicToken }) }}";
+            }
+        };
+    </script>
+{% endblock %}

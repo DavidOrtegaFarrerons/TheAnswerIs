@@ -1,0 +1,75 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Contests{% endblock %}
+
+{% block body %}
+    <div class="container mx-auto py-8 px-4">
+        <h1 class="text-3xl font-bold text-center mb-10">Available Contests</h1>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+            {% for contest in contests %}
+                <div
+                    class="bg-white rounded-2xl shadow hover:shadow-lg transition cursor-pointer"
+                    onclick="openModal('{{ contest.id }}')"
+                >
+                    <img src="{{ contest.imageUrl }}" alt="{{ contest.name }}"
+                         class="w-full h-48 object-cover rounded-t-2xl">
+                    <div class="p-4 text-center">
+                        <h2 class="text-lg font-semibold text-gray-800">{{ contest.name }}</h2>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="contest-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-8 shadow-xl max-w-sm w-full text-center">
+            <h3 class="text-xl font-bold mb-4">Create game?</h3>
+            <p class="text-gray-600 mb-6">This will create a new game using the selected quiz.</p>
+            <div class="flex justify-center gap-4">
+                <button
+                    onclick="createGame()"
+                    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                    Create Game
+                </button>
+                <button
+                    onclick="closeModal()"
+                    class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <form id="create-game-form" method="POST">
+        <input type="hidden" name="contestId" id="form-contest-id">
+    </form>
+
+    <script>
+        let selectedContestId = null;
+
+        function openModal(contestId) {
+            selectedContestId = contestId;
+            document.getElementById('contest-modal').classList.remove('hidden');
+            document.getElementById('contest-modal').classList.add('flex');
+        }
+
+        function closeModal() {
+            document.getElementById('contest-modal').classList.remove('flex');
+            document.getElementById('contest-modal').classList.add('hidden');
+            selectedContestId = null;
+        }
+
+        function createGame() {
+            if (!selectedContestId) return;
+
+            const form = document.getElementById('create-game-form');
+            const input = document.getElementById('form-contest-id');
+            input.value = selectedContestId;
+
+            form.action = `/game/create`;
+            form.submit();
+        }
+    </script>
+{% endblock %}

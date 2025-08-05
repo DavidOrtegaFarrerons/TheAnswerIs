@@ -1,0 +1,184 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Presenter - Play{% endblock %}
+
+{% block body %}
+    <div class="min-h-screen bg-neutral-900 flex items-center justify-center p-4">
+        <div class="w-full max-w-3xl space-y-6">
+            <div id="question-text" class="rounded-2xl border-4 border-blue-600 bg-neutral-800 text-white text-center text-2xl font-semibold p-8 min-h-[5rem]">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6" id="answer-container">
+                {% for key in ['a', 'b', 'c', 'd'] %}
+                    <button
+                        data-key="{{ key }}"
+                        id="answer-{{ key }}"
+                        class="answer-button flex items-center gap-3 rounded-xl border-2 border-blue-600 bg-neutral-800 text-left text-white px-6 py-4 transition-all duration-150 ease-out hover:bg-blue-600 focus:outline-none"
+                    >
+                        <span class="font-bold">{{ key|upper }}.</span>
+                        <span class="answer-text"></span>
+                    </button>
+                {% endfor %}
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6" id="correct-answer-container">
+                <p id="correct-answer" class="text-green-500 font-bold text-2xl"></p>
+            </div>
+        </div>
+
+        <div class="mt-8 text-center hidden" id="next-question-container">
+            <button id="next-question-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition">
+                Load Next Question
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('turbo:load', () => {
+
+        });
+        const answers = {
+            a: document.getElementById('answer-a'),
+            b: document.getElementById('answer-b'),
+            c: document.getElementById('answer-c'),
+            d: document.getElementById('answer-d'),
+        };
+
+        let revealed = {};
+        let correctAnswer = null;
+        let selectedBtn = null;
+
+        function setButtonsEnabled(enabled) {
+            Object.values(answers).forEach(btn => {
+                btn.disabled = !enabled;
+                if (!enabled) {
+                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            });
+        }
+
+        function revealAnswer(key) {
+            if (revealed[key]) return;
+
+            revealed[key] = true;
+
+            fetch('/game/presenter/{{ game.presenterToken }}/reveal-answer/' + key, {
+                method: 'POST'
+            });
+
+            if (Object.keys(revealed).length === 4) {
+                setButtonsEnabled(true);
+            }
+        }
+
+        document.querySelector('#question-text').addEventListener('click', () => {
+            fetch('/game/presenter/{{ game.presenterToken }}/reveal-question', {
+                method: 'POST'
+            });
+        })
+
+        document.querySelectorAll('.answer-button').forEach(button => {
+            const key = button.dataset.key;
+
+            button.addEventListener('click', () => {
+                if (!revealed[key] || Object.keys(revealed).length < 4) {
+                    revealAnswer(key);
+                    return;
+                }
+
+                if (selectedBtn === button) {
+                    fetch('/game/presenter/{{ game.presenterToken }}/submit-answer/' + key, {
+                        method: 'POST'
+                    });
+                } else {
+                    selectedBtn = button;
+                    document.querySelectorAll('.answer-button').forEach(btn => {
+                        btn.classList.remove('ring-4', 'ring-yellow-400', 'scale-105');
+                    });
+                    button.classList.add('ring-4', 'ring-yellow-400', 'scale-105');
+                }
+            });
+        });
+
+        document.getElementById('next-question-button').addEventListener('click', () => {
+            fetch('/game/presenter/{{ game.presenterToken }}/next-round', {
+                method: 'POST'
+            }).then(() => {
+                revealed = {};
+                correctAnswer = null;
+                selectedBtn = null;
+
+                Object.entries(answers).forEach(([key, el]) => {
+                    el.textContent = key.toUpperCase();
+                    el.className = 'answer-button flex items-center gap-3 rounded-xl border-2 border-blue-600 bg-neutral-800 text-left text-white px-6 py-4 transition-all duration-150 ease-out hover:bg-blue-600 focus:outline-none';
+                });
+
+                document.getElementById('question-text').textContent = '';
+                document.getElementById('next-question-container').classList.add('hidden');
+            });
+        });
+
+        if (typeof window.eventSource !== 'undefined') {
+            window.eventSource.close();
+        }
+
+        window.eventSource = new EventSource('{{ mercure("/game/" ~ game.id ~ "/" ~ game.presenterToken) }}');
+
+        window.eventSource.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+
+            if (data.type === 'QUESTION_REVEALED') {
+                document.getElementById('question-text').textContent = data.payload.question;
+
+            }
+
+            if (data.type === 'ANSWER_REVEALED') {
+                const key = data.payload.key;
+                const value = data.payload.text;
+                const btn = answers[key];
+                if (!btn) return;
+
+                if (data.payload.correct) {
+                    correctAnswer = key;
+                    document.getElementById('correct-answer').textContent = key + " | " + value;
+                }
+
+                btn.querySelector('.answer-text').textContent = value;
+
+                if (Object.keys(revealed).length === 4 && correctAnswer) {
+                    setButtonsEnabled(true);
+                }
+            }
+
+            if (data.type === 'ANSWER_SUBMITTED') {
+                const option = data.payload.option;
+                const correct = data.payload.correct;
+
+                if (!answers[option]) return;
+
+                if (correct) {
+                    answers[option].classList.add('!bg-green-700', '!text-white', '!border-green-900');
+                    const btnContainer = document.getElementById('next-question-container');
+                    if (btnContainer) {
+                        btnContainer.classList.remove('hidden');
+                    }
+                } else {
+                    answers[option].classList.add('!bg-red-800', '!text-white', '!border-red-900');
+                }
+            }
+
+            if (data.type === 'CORRECT_ANSWER_REVEALED') {
+                const correctKey = data.payload.correct;
+
+                if (answers[correctKey]) {
+                    answers[correctKey].classList.add('bg-green-700', 'text-white', 'border-green-900');
+                }
+                const btnContainer = document.getElementById('next-question-container');
+                if (btnContainer) {
+                    btnContainer.classList.remove('hidden');
+                }
+            }
+        };
+    </script>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Contestant - Play{% endblock %}
+
+{% block body %}
+    <div class="min-h-screen bg-neutral-900 flex items-center justify-center p-4">
+        <div class="w-full max-w-3xl space-y-6">
+            <div id="question-text" class="rounded-2xl border-4 border-blue-600 bg-neutral-800 text-white text-center text-2xl font-semibold p-8 min-h-[5rem]">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6" id="answer-container">
+                {% for key in ['a', 'b', 'c', 'd'] %}
+                    <span
+                        data-key="{{ key }}"
+                        id="answer-{{ key }}"
+                        class="answer-button flex items-center gap-3 rounded-xl border-2 border-blue-600 bg-neutral-800 text-left text-white px-6 py-4 transition-all duration-150 ease-out hover:bg-blue-600 focus:outline-none"
+                    >
+                        <span class="font-bold">{{ key|upper }}.</span>
+                        <span class="answer-text"></span>
+                    </span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        if (typeof window.eventSource !== 'undefined') {
+            window.eventSource.close();
+        }
+
+        const answers = {
+            a: document.getElementById('answer-a'),
+            b: document.getElementById('answer-b'),
+            c: document.getElementById('answer-c'),
+            d: document.getElementById('answer-d'),
+        };
+
+        window.eventSource = new EventSource('{{ mercure("/game/" ~ game.id ~ "/" ~ game.presenterToken) }}');
+
+        window.eventSource.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+
+            if (data.type === 'QUESTION_REVEALED') {
+                document.getElementById('question-text').textContent = data.payload.question;
+                correctAnswer = data.payload.correctAnswer;
+            }
+
+            if (data.type === 'ANSWER_REVEALED') {
+                console.log(data);
+                const key = data.payload.key;
+                const value = data.payload.text;
+                const btn = answers[key];
+                if (!btn) return;
+
+                btn.querySelector('.answer-text').textContent = value;
+
+                if (Object.keys(revealed).length === 4 && correctAnswer) {
+                    showCorrectAnswer();
+                    setButtonsEnabled(true);
+                }
+            }
+        };
+    </script>
+{% endblock %}
