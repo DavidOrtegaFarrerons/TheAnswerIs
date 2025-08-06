@@ -1,16 +1,37 @@
 :80 {
   encode zstd gzip
-  root * /srv/app/public
+  root * /var/www/html/public   # ← matches both containers
 
-  php_fastcgi php:9000 {
-    try_files {path} /index.php?{query}
+  # ─── Mercure passthrough ──────────────────────────────────────────────
+  @mercure path /.well-known/mercure*           # match hub paths
+  handle @mercure {
+      reverse_proxy mercure:80                 # talk to the hub container
+  }
+  # ─── Everything else continues below ───────
+
+  handle /hub* {
+    reverse_proxy mercure:80 {
+      header_up Authorization {>Authorization}
+      header_up Cookie {>Cookie}
+    }
   }
 
-  file_server
-
-  @mercure path /.well-known/mercure* /hub*
-  reverse_proxy @mercure mercure:80
-
+  # Static cache (optional)
   @static path *.css *.js *.mjs *.png *.jpg *.jpeg *.gif *.svg *.ico *.woff *.woff2 *.ttf *.eot
-  header @static Cache-Control "public, max-age=31536000, immutable"
+  handle @static {
+    file_server
+    header Cache-Control "public, max-age=31536000, immutable"
+  }
+
+  # Symfony front controller
+  handle {
+    try_files {path} {path}/ /index.php{uri}
+    php_fastcgi php:9000
+    file_server
+  }
+
+  log {
+    output stdout
+    format console
+  }
 }

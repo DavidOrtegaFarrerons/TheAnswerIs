@@ -28,8 +28,8 @@ services:
     environment:
       APP_ENV: prod
       DATABASE_URL: ${DATABASE_URL}
-      MERCURE_URL: http://mercure/.well-known/mercure
-      MERCURE_PUBLIC_URL: https://${SERVER_NAME:-localhost}/.well-known/mercure
+      MERCURE_URL: ${MERCURE_URL}
+      MERCURE_PUBLIC_URL: ${MERCURE_PUBLIC_URL}
       MERCURE_JWT_SECRET: ${MERCURE_JWT_SECRET}
     working_dir: /var/www/html
     # dev override bind-mounts code; prod uses the built image
@@ -49,12 +49,15 @@ services:
       - database_data:/var/lib/postgresql/data:rw
     restart: unless-stopped
     networks: [appnet]
+    ports:
+      - "127.0.0.1:5432:5432"
 
   mercure:
     image: dunglas/mercure
     restart: unless-stopped
     environment:
       SERVER_NAME: ":80"   # Mercure’s internal Caddy on HTTP; main Caddy will proxy
+
       MERCURE_PUBLISHER_JWT_KEY: ${MERCURE_JWT_SECRET}
       MERCURE_SUBSCRIBER_JWT_KEY: ${MERCURE_JWT_SECRET}
       MERCURE_EXTRA_DIRECTIVES: |

@@ -8,10 +8,10 @@ services:
 
     caddy:
         ports:
-            - "80:80"
+            - "8000:80"
         volumes:
             - ./Caddyfile.dev:/etc/caddy/Caddyfile:ro
-            - .:/srv/app:ro
+            - .:/var/www/html:ro
 
     node:
         volumes:
