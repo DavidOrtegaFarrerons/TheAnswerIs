@@ -16,6 +16,8 @@ services:
       - .:/srv/app:ro
     restart: unless-stopped
     networks: [appnet]
+    env_file:
+      - .env
 
   php:
     build:

@@ -8,7 +8,11 @@
   redir @www https://{$SERVER_NAME}{uri} permanent
 
   encode zstd gzip
-  root * /srv/app/public
+  root * /var/www/html/public
+
+  # → If file exists, serve it; otherwise pass the request to Symfony’s
+  #   front controller.
+  try_files {path} {path}/ /index.php?{query}
 
   php_fastcgi php:9000 {
     try_files {path} /index.php?{query}

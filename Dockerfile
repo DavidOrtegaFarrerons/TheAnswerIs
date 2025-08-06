@@ -17,13 +17,14 @@ RUN { \
 
 WORKDIR /var/www/html
 
-# Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
 
 # Copy app
 COPY . /var/www/html
 
 # Install PHP deps (prod defaults)
+USER www-data
+
 ARG APP_ENV=prod
 RUN if [ "$APP_ENV" = "prod" ]; then \
       composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader; \
