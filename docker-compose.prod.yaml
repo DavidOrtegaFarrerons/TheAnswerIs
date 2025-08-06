@@ -3,6 +3,8 @@ services:
         ports:
             - "80:80"
             - "443:443"
+        env_file:
+            - .env.prod.local
         volumes:
             - ./Caddyfile.prod:/etc/caddy/Caddyfile:ro
             # In prod, Caddy serves static assets from the php image via an internal mount path.

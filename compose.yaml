@@ -60,7 +60,8 @@ services:
 
       MERCURE_PUBLISHER_JWT_KEY: ${MERCURE_JWT_SECRET}
       MERCURE_SUBSCRIBER_JWT_KEY: ${MERCURE_JWT_SECRET}
-      MERCURE_EXTRA_DIRECTIVES: |
+      MERCURE_EXTRA_DIRECTIVES: |-
+        anonymous
         cors_origins https://${SERVER_NAME:-localhost} http://localhost:5173 http://127.0.0.1:5173
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost/healthz"]

@@ -1,32 +1,43 @@
 {
-  email you@example.com
+	# Global options
+	email you@example.com
+	# Make every reverse_proxy (including our Mercure one) run
+	# before try_files so the hub path isn’t rewritten to /index.php
+	order reverse_proxy before try_files
 }
 
 {$SERVER_NAME}, www.{$SERVER_NAME} {
-  # Redirect www -> apex
-  @www host www.{$SERVER_NAME}
-  redir @www https://{$SERVER_NAME}{uri} permanent
 
-  encode zstd gzip
-  root * /var/www/html/public
+	# Redirect www → apex
+	@www host www.{$SERVER_NAME}
+	redir @www https://{$SERVER_NAME}{uri} permanent
 
-  # → If file exists, serve it; otherwise pass the request to Symfony’s
-  #   front controller.
-  try_files {path} {path}/ /index.php?{query}
 
-  php_fastcgi php:9000 {
-    try_files {path} /index.php?{query}
-  }
+	# Generic settings
+	encode zstd gzip
+	root * /var/www/html/public
 
-  file_server
 
-  # Mercure on same domain
-  @mercure path /.well-known/mercure* /hub*
-  reverse_proxy @mercure mercure:80
+	# Mercure (must come before try_files)
+	@mercure path /.well-known/mercure* /hub*
+	reverse_proxy @mercure mercure:80
 
-  @static path *.css *.js *.mjs *.png *.jpg *.jpeg *.gif *.svg *.ico *.woff *.woff2 *.ttf *.eot
-  header @static Cache-Control "public, max-age=31536000, immutable"
 
-  # (Optional after HTTPS is verified)
-  # header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+	# Long-cached static assets
+	@static path *.css *.js *.mjs *.png *.jpg *.jpeg *.gif *.svg *.ico *.woff *.woff2 *.ttf *.eot
+	header @static Cache-Control "public, max-age=31536000, immutable"
+
+
+	# Symfony front controller
+	try_files {path} {path}/ /index.php?{query}
+	php_fastcgi php:9000 {
+		try_files {path} /index.php?{query}
+	}
+
+
+	# Plain file serving fallback
+	file_server
+
+	# (Optional) HSTS once HTTPS is confirmed working
+	# header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 }
