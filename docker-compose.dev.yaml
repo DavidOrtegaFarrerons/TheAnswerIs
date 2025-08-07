@@ -2,6 +2,8 @@ services:
     php:
         environment:
             APP_ENV: dev
+            OPCACHE_VALIDATE_TIMESTAMPS: 1
+            OPCACHE_REVALIDATE_FREQ: 0
         volumes:
             - .:/var/www/html
         # optional: expose FPM only inside the network (no ports needed)

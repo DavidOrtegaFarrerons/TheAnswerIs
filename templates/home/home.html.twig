@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quizzes • Inicio</title>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-purple-700 via-indigo-700 to-blue-700 text-white">
+<header class="pt-10 pb-24 px-6">
+    <div class="max-w-5xl mx-auto text-center space-y-8">
+        <span class="text-7xl">🤔</span>
+        <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight leading-tight">Pon a prueba tu conocimiento</h1>
+        <p class="text-lg md:text-xl text-gray-200 max-w-2xl mx-auto">Explora retos divertidos creados por la comunidad y supera tus límites cada día.</p>
+        <div class="flex flex-col sm:flex-row justify-center gap-4">
+            <a href="#quizzes" class="inline-flex items-center justify-center gap-3 rounded-full bg-yellow-500 px-8 py-4 font-semibold text-neutral-900 transition-transform duration-150 hover:scale-105 hover:bg-yellow-400 active:scale-95">
+                <span>Empezar ahora</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            </a>
+            <a href="#crear" class="inline-flex items-center justify-center gap-3 rounded-full border border-white/30 px-8 py-4 font-semibold transition-all duration-150 hover:bg-white/10 active:scale-95">
+                Crear un quiz
+            </a>
+        </div>
+    </div>
+</header>
+
+<main class="space-y-32">
+    <section id="quizzes" class="px-6">
+        <div class="max-w-6xl mx-auto space-y-8">
+            <h2 class="text-3xl md:text-4xl font-bold text-center">Últimos quizzes</h2>
+
+            <div class="relative">
+                <div class="overflow-auto scrollbar-hide">
+                    <ul class="flex gap-6 snap-x snap-mandatory scroll-pl-6">
+                        {% for contest in latestContests %}
+                            <li class="snap-center shrink-0 w-72 h-120">
+                                <article class="rounded-3xl bg-neutral-900/70 backdrop-blur-sm p-6 h-80 flex flex-col gap-6 shadow-xl shadow-black/40">
+                                    <h3 class="text-2xl font-bold truncate">{{ contest.name }}</h3>
+
+                                    <div class="relative w-full pt-[56%] rounded-xl overflow-hidden">
+                                        <img src="{{ contest.imageUrl }}" alt="{{ contest.name }}" class="absolute inset-0 w-full h-full object-cover">
+                                    </div>
+
+                                    <a href=""
+                                       class="inline-flex items-center justify-center gap-2 rounded-full bg-yellow-500 px-6 py-3 font-semibold text-neutral-900 transition-transform duration-150 hover:scale-105 hover:bg-yellow-400 active:scale-95">
+                                        Jugar
+                                    </a>
+                                </article>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="px-6">
+        <div class="max-w-6xl mx-auto space-y-14">
+            <h2 class="text-3xl md:text-4xl font-bold text-center">Categorías populares</h2>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            </div>
+        </div>
+    </section>
+
+    <section class="px-6">
+        <div class="max-w-6xl mx-auto space-y-14">
+            <h2 class="text-3xl md:text-4xl font-bold text-center">¿Cómo funciona?</h2>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="rounded-3xl bg-neutral-900/70 backdrop-blur-sm p-10 space-y-6 shadow-xl shadow-black/40">
+                    <div class="text-5xl">🔍</div>
+                    <h3 class="text-2xl font-bold">Elige un quiz</h3>
+                    <p class="text-gray-300 leading-relaxed">Explora cientos de retos en todas las categorías imaginables.</p>
+                </div>
+                <div class="rounded-3xl bg-neutral-900/70 backdrop-blur-sm p-10 space-y-6 shadow-xl shadow-black/40">
+                    <div class="text-5xl">💡</div>
+                    <h3 class="text-2xl font-bold">Responde preguntas</h3>
+                    <p class="text-gray-300 leading-relaxed">Pon a prueba tu memoria, rapidez y creatividad.</p>
+                </div>
+                <div class="rounded-3xl bg-neutral-900/70 backdrop-blur-sm p-10 space-y-6 shadow-xl shadow-black/40">
+                    <div class="text-5xl">🏆</div>
+                    <h3 class="text-2xl font-bold">Comparte tu puntuación</h3>
+                    <p class="text-gray-300 leading-relaxed">Presume tus logros y reta a tus amigos a superarte.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="px-6">
+        <div class="max-w-6xl mx-auto">
+            <div class="rounded-3xl bg-neutral-900/80 backdrop-blur-sm p-14 text-center space-y-8 shadow-2xl shadow-black/50">
+                <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight">¡Crea tu propio quiz!</h2>
+                <p class="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto">Diseña desafíos únicos, comparte con la comunidad y observa cómo otros compiten.</p>
+                <a class="inline-flex items-center justify-center gap-3 rounded-full bg-yellow-500 px-10 py-5 font-semibold text-neutral-900 transition-transform duration-150 hover:scale-105 hover:bg-yellow-400 active:scale-95">
+                    Empezar ahora
+                </a>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer class="py-10 text-center text-gray-400 text-sm">
+    &copy; {{ "now"|date("Y") }} Quizzes
+</footer>
+</body>
+</html>

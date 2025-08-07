@@ -1,0 +1,50 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+    <script src="https://cdn.tailwindcss.com/3.3.5"></script>
+{% endblock %}
+
+{% block body_class 'min-h-screen bg-gradient-to-br from-purple-700 via-indigo-700 to-blue-700 text-white' %}
+
+{% block content %}
+    <div class="px-6 space-y-16">
+
+        <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight mb-6">Panel de control</h1>
+
+        <section class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <a href="{{ path('admin_contest_index') }}" class="rounded-3xl bg-neutral-900/70 backdrop-blur-sm p-8 shadow-xl shadow-black/40 flex items-center justify-between transition-transform duration-150 hover:scale-105">
+                <div>
+                    <div class="text-sm uppercase tracking-widest text-gray-400">Concursos</div>
+                    <div class="text-4xl font-bold">{{ contestsCount }}</div> {# 👈 comes from the controller #}
+                </div>
+                <span class="text-4xl">🏆</span>
+            </a>
+
+            <a href="{{ path('admin_question_index') }}" class="rounded-3xl bg-neutral-900/70 backdrop-blur-sm p-8 shadow-xl shadow-black/40 flex items-center justify-between transition-transform duration-150 hover:scale-105">
+                <div>
+                    <div class="text-sm uppercase tracking-widest text-gray-400">Preguntas</div>
+                    <div class="text-4xl font-bold">{{ questionsCount }}</div>
+                </div>
+                <span class="text-4xl">❓</span>
+            </a>
+
+            <a href="{{ path('admin_contest_new') }}" class="rounded-3xl bg-yellow-500 text-neutral-900 p-8 shadow-xl shadow-black/40 flex items-center justify-between transition-transform duration-150 hover:scale-105 hover:bg-yellow-400">
+                <div>
+                    <div class="text-sm uppercase tracking-widest">Nuevo concurso</div>
+                    <div class="text-4xl font-bold">+</div>
+                </div>
+                <span class="text-4xl">🚀</span>
+            </a>
+
+            <a href="{{ path('admin_question_new') }}" class="rounded-3xl bg-yellow-500 text-neutral-900 p-8 shadow-xl shadow-black/40 flex items-center justify-between transition-transform duration-150 hover:scale-105 hover:bg-yellow-400">
+                <div>
+                    <div class="text-sm uppercase tracking-widest">Nueva pregunta</div>
+                    <div class="text-4xl font-bold">+</div>
+                </div>
+                <span class="text-4xl">📝</span>
+            </a>
+        </section>
+
+    </div>
+{% endblock %}

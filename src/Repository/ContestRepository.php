@@ -16,6 +16,16 @@ class ContestRepository extends ServiceEntityRepository
         parent::__construct($registry, Contest::class);
     }
 
+    public function getLatestContests(int $contestsNumber)
+    {
+        return $this->createQueryBuilder('c')
+            ->orderBy('c.createdAt', 'DESC')
+            ->setMaxResults($contestsNumber)
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+
     //    /**
     //     * @return Contest[] Returns an array of Contest objects
     //     */
