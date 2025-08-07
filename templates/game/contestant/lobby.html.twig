@@ -3,15 +3,16 @@
 {% block title %}Waiting Room{% endblock %}
 
 {% block body %}
-    <div class="min-h-screen bg-gray-100 flex items-center justify-center px-4">
-        <div class="bg-white rounded-2xl shadow-md p-8 max-w-md w-full text-center">
-            <h1 class="text-2xl font-bold text-gray-800 mb-4">Waiting for Game Master...</h1>
-            <p class="text-gray-600 mb-6">You have joined the game. Please wait until the Game Master starts the quiz.</p>
+    <div class="min-h-screen bg-gradient-to-br from-purple-700 via-indigo-700 to-blue-700 flex items-center justify-center p-6">
+        <div class="w-full max-w-sm rounded-3xl bg-neutral-900/80 backdrop-blur-sm text-white px-10 py-14 space-y-8 shadow-2xl shadow-black/50 text-center">
+            <div class="text-6xl">⌛</div>
+            <h1 class="text-3xl font-extrabold tracking-tight">Sala de espera</h1>
+            <p class="text-gray-300">Te has unido a la partida. Espera a que el presentador la inicie.</p>
 
             <div class="flex justify-center">
-                <svg class="animate-spin h-6 w-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                <svg class="animate-spin h-8 w-8 text-yellow-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                 </svg>
             </div>
         </div>
@@ -20,17 +21,13 @@
     <script>
         fetch('/api/game/{{ game.id }}/contestant-joined', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({"contestantStatus": "joined"})
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contestantStatus: 'joined' })
         });
 
-        const eventSource = new EventSource('{{ mercure("/game/" ~ game.id ~ "/" ~ game.publicToken) }}');
-
-        eventSource.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-
+        const es = new EventSource('{{ mercure("/game/" ~ game.id ~ "/" ~ game.publicToken) }}');
+        es.onmessage = e => {
+            const data = JSON.parse(e.data);
             if (data.type === 'GAME_STARTED') {
                 window.location.href = "{{ path('game.contestant.start', { id: game.id, publicToken: game.publicToken }) }}";
             }

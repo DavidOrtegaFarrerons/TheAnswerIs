@@ -43,7 +43,7 @@ class QuestionCrudController extends AbstractCrudController
             ChoiceField::new('difficulty')
                 ->setChoices(Difficulty::cases()),
 
-            AssociationField::new('contestId', 'Contest')
+            AssociationField::new('contest', 'Contest')
                 ->setRequired(true)
                 ->setFormTypeOption('choice_label', 'name')
         ];

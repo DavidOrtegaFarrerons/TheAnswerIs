@@ -6,21 +6,29 @@
     <div class="min-h-screen bg-gradient-to-br from-purple-700 via-indigo-700 to-blue-700 flex items-center justify-center p-4">
         <div class="w-full max-w-3xl rounded-3xl bg-neutral-900/80 backdrop-blur-md shadow-2xl shadow-black/60 p-8 space-y-8">
 
-            <div class="flex justify-center gap-2" id="stepper">
-                {% for i in 1..15 %}
-                    <div id="step-{{ i }}"
-                         class="w-7 h-7 rounded-full border-2 border-blue-600 text-white text-xs font-bold flex items-center justify-center bg-neutral-800/80 transition-all duration-150">
+            <div class="flex justify-center gap-2" id="stepper" data-total="15">
+                {% set totalRounds = 15 %}
+                {% set currentRoundsPlayed = roundsPlayed|default(0) %}
+                {% for i in 1..totalRounds %}
+                    {% set isDone = i <= currentRoundsPlayed %}
+                    {% set isCurrent = i == currentRoundsPlayed + 1 %}
+                    <div id="round-{{ i }}"
+                         class="w-7 h-7 rounded-full border-2 text-white text-xs font-bold flex items-center justify-center transition-all duration-150
+                            {{ isDone ? 'bg-green-500 border-green-400' : 'bg-neutral-800/80 border-blue-600' }}
+                            {{ isCurrent ? 'border-yellow-400 ring-2 ring-yellow-300 scale-110' : '' }}">
                         {{ i }}
                     </div>
                 {% endfor %}
+            </div>
+
+            <div id="question-text" class="rounded-2xl border-4 border-blue-600 bg-neutral-800/90 text-white text-center text-2xl font-semibold p-8 min-h-[5rem] flex items-center justify-center">
+                {{ round.question.title }}
             </div>
 
             <div id="joker-bar" class="flex justify-center gap-4 my-4">
                 <button id="5050"        class="joker-btn hidden text-white">50/50</button>
                 <button id="roulette"   class="joker-btn hidden">🎯</button>
                 <button id="phone"      class="joker-btn hidden">📞</button>
-            </div>
-            <div id="question-text" class="rounded-2xl border-4 border-blue-600 bg-neutral-800/90 text-white text-center text-2xl font-semibold p-8 min-h-[5rem] flex items-center justify-center">
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6" id="answer-container">
@@ -40,6 +48,22 @@
     </div>
 
     <script>
+        function updateStepper(roundsPlayed) {
+            const container = document.getElementById('stepper');
+            const total = parseInt(container.dataset.total || '15', 10);
+            for (let i = 1; i <= total; i++) {
+                const el = document.getElementById('round-' + i);
+                if (!el) continue;
+                el.classList.remove('bg-green-500','border-green-400','bg-neutral-800/80','border-blue-600','border-yellow-400','ring-2','ring-yellow-300','scale-110');
+                if (i <= roundsPlayed) {
+                    el.classList.add('bg-green-500','border-green-400');
+                } else if (i === roundsPlayed + 1 && i <= total) {
+                    el.classList.add('bg-neutral-800/80','border-yellow-400','ring-2','ring-yellow-300','scale-110');
+                } else {
+                    el.classList.add('bg-neutral-800/80','border-blue-600');
+                }
+            }
+        }
 
         if (typeof window.eventSource !== 'undefined') {
             window.eventSource.close();
@@ -81,13 +105,6 @@
 
         window.eventSource.onmessage = (event) => {
             const data = JSON.parse(event.data);
-
-            if (data.type === 'QUESTION_REVEALED') {
-                currentQuestionIndex += 1;
-                highlightStep(currentQuestionIndex);
-                document.getElementById('question-text').textContent = data.payload.question;
-                correctAnswer = data.payload.correctAnswer;
-            }
 
             if (data.type === 'ANSWER_REVEALED') {
                 const key = data.payload.key;
@@ -157,13 +174,9 @@
                     el.className = 'answer-button flex items-center gap-3 rounded-xl border-2 border-blue-600 bg-neutral-800 text-left text-white px-6 py-4 transition-all duration-150 ease-out hover:bg-blue-600 focus:outline-none';
                 });
 
-                document.getElementById('question-text').textContent = '';
-                document.getElementById('next-question-container').classList.add('hidden');
 
                 if (data.type === 'END_OF_GAME') {
-                    document.getElementById('question-text').textContent = '';
                     document.getElementById('answer-container').innerHTML = '';
-                    document.getElementById('next-question-container')?.classList.add('hidden');
 
                     const congrats = document.createElement('h1');
                     congrats.className = 'text-4xl font-bold text-green-500 text-center mt-10';
@@ -172,10 +185,16 @@
                 }
             }
 
+            if (data.type === 'NEXT_ROUND') {
+                document.getElementById('question-text').textContent = data.payload.questionText;
+                updateStepper(data.payload.roundsPlayed);
+            }
+
             if (data.type === 'END_OF_GAME') {
                 window.location.href = '/game/contestant/end';
             }
         };
 
+        updateStepper({{ roundsPlayed|default(0) }});
     </script>
 {% endblock %}

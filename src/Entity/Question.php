@@ -40,8 +40,8 @@ class Question
     private Difficulty $difficulty;
 
     #[ORM\ManyToOne(inversedBy: 'questions')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Contest $contestId = null;
+    #[ORM\JoinColumn(name: 'contest_id', nullable: false)]
+    private ?Contest $contest = null;
 
     public function getId(): ?Uuid
     {
@@ -141,14 +141,14 @@ class Question
         };
     }
 
-    public function getContestId(): ?Contest
+    public function getContest(): ?Contest
     {
-        return $this->contestId;
+        return $this->contest;
     }
 
-    public function setContestId(?Contest $contestId): static
+    public function setContest(?Contest $contest): static
     {
-        $this->contestId = $contestId;
+        $this->contest = $contest;
 
         return $this;
     }

@@ -29,12 +29,12 @@ class QuestionRepository extends ServiceEntityRepository
         );
 
         return $this->createQueryBuilder('q')
-            ->where('q.contestId = :contest')
+            ->where('q.contest = :contest')
             ->andWhere('q.id NOT IN (:usedIds)')
             ->andWhere('q.difficulty = (:difficulty)')
             ->setParameter('contest', $contest)
             ->setParameter('usedIds', $usedQuestionIds ?: [Uuid::v4()])
-            ->setParameter('difficulty', $difficulty)
+            ->setParameter('difficulty', $difficulty->value)
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();

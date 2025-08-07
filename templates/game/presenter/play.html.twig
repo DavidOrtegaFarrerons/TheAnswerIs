@@ -3,32 +3,38 @@
 {% block title %}Presenter - Play{% endblock %}
 
 {% block body %}
-
     <div class="min-h-screen bg-gradient-to-br from-purple-700 via-indigo-700 to-blue-700 flex flex-col items-center justify-center p-4">
         <div class="w-full max-w-3xl rounded-3xl bg-neutral-900/80 backdrop-blur-md shadow-2xl shadow-black/60 p-8 space-y-8">
 
-            <div class="flex justify-center gap-2" id="stepper">
-                {% for i in 1..15 %}
-                    <div id="step-{{ i }}"
-                         class="w-7 h-7 rounded-full border-2 border-blue-600 text-white text-xs font-bold flex items-center justify-center bg-neutral-800/80 transition-all duration-150">
+            <div class="flex justify-center gap-2" id="stepper" data-total="15">
+                {% set totalRounds = 15 %}
+                {% set currentRoundsPlayed = roundsPlayed|default(0) %}
+                {% for i in 1..totalRounds %}
+                    {% set isDone = i <= currentRoundsPlayed %}
+                    {% set isCurrent = i == currentRoundsPlayed + 1 %}
+                    <div id="round-{{ i }}"
+                         class="w-7 h-7 rounded-full border-2 text-white text-xs font-bold flex items-center justify-center transition-all duration-150
+                            {{ isDone ? 'bg-green-500 border-green-400' : 'bg-neutral-800/80 border-blue-600' }}
+                            {{ isCurrent ? 'border-yellow-400 ring-2 ring-yellow-300 scale-110' : '' }}">
                         {{ i }}
                     </div>
                 {% endfor %}
             </div>
 
-            <div id="question-text" class="rounded-2xl border-4 border-blue-600 bg-neutral-800/90 text-white text-center text-2xl font-semibold p-8 min-h-[5rem] flex items-center justify-center"></div>
+            <div id="question-text" class="rounded-2xl border-4 border-blue-600 bg-neutral-800/90 text-white text-center text-2xl font-semibold p-8 min-h-[5rem] flex items-center justify-center">{{ round.question.title }}</div>
 
             <div id="joker-bar" class="flex justify-center gap-4 my-4">
-                <button id="5050"    class="joker-btn hidden text-white">50/50</button>
-                <button id="roulette" class="joker-btn hidden">🎯</button>
-                <button id="phone"    class="joker-btn hidden">📞</button>
+                <button id="5050" class="joker-btn cursor-pointer hidden text-white">50/50</button>
+                <button id="roulette" class="joker-btn cursor-pointer hidden">🎯</button>
+                <button id="phone" class="joker-btn cursor-pointer hidden">📞</button>
             </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6" id="answer-container">
                 {% for key in ['a', 'b', 'c', 'd'] %}
                     <button
                         data-key="{{ key }}"
                         id="answer-{{ key }}"
-                        class="answer-button flex items-center gap-3 rounded-xl border-2 border-blue-600 bg-neutral-800/80 text-left text-white px-6 py-4 transition-all duration-150 hover:bg-blue-600/80 hover:border-yellow-400 focus:outline-none">
+                        class="answer-button cursor-pointer flex items-center gap-3 rounded-xl border-2 border-blue-600 bg-neutral-800/80 text-left text-white px-6 py-4 transition-all duration-150 hover:bg-blue-600/80 hover:border-yellow-400 focus:outline-none">
                         <span class="font-bold">{{ key|upper }}.</span>
                         <span class="answer-text"></span>
                     </button>
@@ -41,7 +47,7 @@
 
             <div class="w-full flex justify-center hidden" id="next-question-container">
                 <button id="next-question-button"
-                        class=" bg-yellow-500 hover:bg-yellow-400 text-neutral-900 font-semibold py-3 px-8 rounded-full shadow-lg shadow-yellow-800/30 transition-transform duration-150 hover:scale-105 active:scale-95">
+                        class="cursor-pointer bg-yellow-500 hover:bg-yellow-400 text-neutral-900 font-semibold py-3 px-8 rounded-full shadow-lg shadow-yellow-800/30 transition-transform duration-150 hover:scale-105 active:scale-95">
                     Siguiente pregunta
                 </button>
             </div>
@@ -49,9 +55,23 @@
     </div>
 
     <script>
-        document.addEventListener('turbo:load', () => {
+        function updateStepper(roundsPlayed) {
+            const container = document.getElementById('stepper');
+            const total = parseInt(container.dataset.total || '15', 10);
+            for (let i = 1; i <= total; i++) {
+                const el = document.getElementById('round-' + i);
+                if (!el) continue;
+                el.classList.remove('bg-green-500','border-green-400','bg-neutral-800/80','border-blue-600','border-yellow-400','ring-2','ring-yellow-300','scale-110');
+                if (i <= roundsPlayed) {
+                    el.classList.add('bg-green-500','border-green-400');
+                } else if (i === roundsPlayed + 1 && i <= total) {
+                    el.classList.add('bg-neutral-800/80','border-yellow-400','ring-2','ring-yellow-300','scale-110');
+                } else {
+                    el.classList.add('bg-neutral-800/80','border-blue-600');
+                }
+            }
+        }
 
-        });
         let answers = {
             a: document.getElementById('answer-a'),
             b: document.getElementById('answer-b'),
@@ -87,96 +107,45 @@
 
         function revealAnswer(key) {
             if (revealed[key]) return;
-
             revealed[key] = true;
-
-            fetch('/game/presenter/{{ game.presenterToken }}/reveal-answer/' + key, {
-                method: 'POST'
-            });
-
-            if (Object.keys(revealed).length === 4) {
-                setButtonsEnabled(true);
-            }
+            fetch('/game/presenter/{{ game.presenterToken }}/reveal-answer/' + key, { method: 'POST' });
+            if (Object.keys(revealed).length === 4) setButtonsEnabled(true);
         }
-
-        document.querySelector('#question-text').addEventListener('click', () => {
-            fetch('/game/presenter/{{ game.presenterToken }}/reveal-question', {
-                method: 'POST'
-            });
-        })
 
         document.querySelectorAll('.answer-button').forEach(button => {
             const key = button.dataset.key;
-
             button.addEventListener('click', () => {
                 if (!revealed[key] || Object.keys(revealed).length < 4) {
                     revealAnswer(key);
                     return;
                 }
-
                 if (selectedBtn === button) {
-                    fetch('/game/presenter/{{ game.presenterToken }}/submit-answer/' + key, {
-                        method: 'POST'
-                    });
+                    fetch('/game/presenter/{{ game.presenterToken }}/submit-answer/' + key, { method: 'POST' });
                 } else {
                     selectedBtn = button;
-                    document.querySelectorAll('.answer-button').forEach(btn => {
-                        btn.classList.remove('ring-4', 'ring-yellow-400', 'scale-105');
-                    });
+                    document.querySelectorAll('.answer-button').forEach(btn => btn.classList.remove('ring-4', 'ring-yellow-400', 'scale-105'));
                     button.classList.add('ring-4', 'ring-yellow-400', 'scale-105');
-
-                    fetch('/game/presenter/{{ game.presenterToken }}/select-answer/' + key, {
-                        method: 'POST'
-                    })
+                    fetch('/game/presenter/{{ game.presenterToken }}/select-answer/' + key, { method: 'POST' });
                 }
             });
         });
 
         document.getElementById('next-question-button').addEventListener('click', () => {
-            fetch('/game/presenter/{{ game.presenterToken }}/next-round', {
-                method: 'POST'
-            }).then(() => {
+            fetch('/game/presenter/{{ game.presenterToken }}/next-round', { method: 'POST' }).then(() => {
                 revealed = {};
                 correctAnswer = null;
                 selectedBtn = null;
-
                 Object.entries(answers).forEach(([key, el]) => {
                     const answerPrefix = el.querySelector('span.font-bold');
                     const answerText = el.querySelector('span.answer-text');
-
-                    if (answerPrefix) {
-                        answerPrefix.textContent = `${key.toUpperCase()}.`;
-                    }
-
-                    if (answerText) {
-                        answerText.textContent = '';
-                    }
-
+                    if (answerPrefix) answerPrefix.textContent = `${key.toUpperCase()}.`;
+                    if (answerText) answerText.textContent = '';
                     el.className = 'answer-button flex items-center gap-3 rounded-xl border-2 border-blue-600 bg-neutral-800 text-left text-white px-6 py-4 transition-all duration-150 ease-out hover:bg-blue-600 focus:outline-none';
                 });
                 document.getElementById('correct-answer').classList.add('hidden');
-                document.getElementById('question-text').textContent = '';
                 document.getElementById('next-question-container').classList.add('hidden');
             });
         });
-
-        function highlightStep(index) {
-            for (let i = 1; i <= 15; i++) {
-                const step = document.getElementById(`step-${i}`);
-                if (!step) continue;
-
-                if (i < index) {
-                    step.classList.add('bg-blue-600', 'text-white');
-                    step.classList.remove('bg-neutral-800');
-                } else if (i === index) {
-                    step.classList.add('bg-yellow-400', 'text-black');
-                    step.classList.remove('bg-neutral-800', 'text-white');
-                } else {
-                    step.classList.remove('bg-blue-600', 'bg-yellow-400', 'text-black');
-                    step.classList.add('bg-neutral-800', 'text-white');
-                }
-            }
-        }
 
         if (typeof window.eventSource !== 'undefined') {
             window.eventSource.close();
@@ -187,27 +156,15 @@
         window.eventSource.onmessage = (event) => {
             const data = JSON.parse(event.data);
 
-            if (data.type === 'QUESTION_REVEALED') {
-                currentQuestionIndex += 1;
-                highlightStep(currentQuestionIndex);
-                document.getElementById('question-text').textContent = data.payload.question;
-
-            }
-
             if (data.type === 'JOKER_USED') {
                 const jk = data.payload.joker;
-
                 if (jk === '5050' || jk === 'roulette') {
                     data.payload.remove.forEach(key => {
                         const btn = document.getElementById('answer-'+key);
                         if (btn) btn.classList.add('opacity-40','cursor-not-allowed');
                     });
                 }
-
-                if (jk === 'phone') {
-                    alert('📞 ¡Ha usado el comodín de la llamada!');
-                }
-
+                if (jk === 'phone') alert('📞 ¡Ha usado el comodín de la llamada!');
                 document.getElementById(`#${jk}`).classList.add('hidden');
             }
 
@@ -216,33 +173,24 @@
                 const value = data.payload.text;
                 const btn = answers[key];
                 if (!btn) return;
-
                 if (data.payload.correct) {
                     correctAnswer = key;
                     let correctAnswerText = document.getElementById('correct-answer');
                     correctAnswerText.textContent = key + " | " + value;
                     correctAnswerText.classList.remove('hidden');
                 }
-
                 btn.querySelector('.answer-text').textContent = value;
-
-                if (Object.keys(revealed).length === 4 && correctAnswer) {
-                    setButtonsEnabled(true);
-                }
+                if (Object.keys(revealed).length === 4 && correctAnswer) setButtonsEnabled(true);
             }
 
             if (data.type === 'ANSWER_SUBMITTED') {
                 const option = data.payload.option;
                 const correct = data.payload.correct;
-
                 if (!answers[option]) return;
-
                 if (correct) {
                     answers[option].classList.add('!bg-green-700', '!text-white', '!border-green-900');
                     const btnContainer = document.getElementById('next-question-container');
-                    if (btnContainer) {
-                        btnContainer.classList.remove('hidden');
-                    }
+                    if (btnContainer) btnContainer.classList.remove('hidden');
                 } else {
                     answers[option].classList.add('!bg-red-800', '!text-white', '!border-red-900');
                 }
@@ -250,19 +198,21 @@
 
             if (data.type === 'CORRECT_ANSWER_REVEALED') {
                 const correctKey = data.payload.correct;
-
-                if (answers[correctKey]) {
-                    answers[correctKey].classList.add('bg-green-700', 'text-white', 'border-green-900');
-                }
+                if (answers[correctKey]) answers[correctKey].classList.add('bg-green-700', 'text-white', 'border-green-900');
                 const btnContainer = document.getElementById('next-question-container');
-                if (btnContainer) {
-                    btnContainer.classList.remove('hidden');
-                }
+                if (btnContainer) btnContainer.classList.remove('hidden');
+            }
+
+            if (data.type === 'NEXT_ROUND') {
+                document.getElementById('question-text').textContent = data.payload.questionText;
+                updateStepper(data.payload.roundsPlayed);
             }
 
             if (data.type === 'END_OF_GAME') {
                 window.location.href = '/game/presenter/end';
             }
         };
+
+        updateStepper({{ roundsPlayed|default(0) }});
     </script>
 {% endblock %}

@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Game;
+use App\Repository\RoundRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -34,9 +35,14 @@ class GameContestantController extends AbstractController
     }
 
     #[Route('/game/contestant/start/{publicToken}', name: 'game.contestant.start', methods: ['GET'])]
-    public function startAction(string $publicToken, EntityManagerInterface $em) {
+    public function startAction(string $publicToken, EntityManagerInterface $em, RoundRepository $roundRepository) {
         $game = $em->getRepository(Game::class)->findOneBy(['publicToken' => $publicToken]);
-        return $this->render('game/contestant/play.html.twig', ['game' => $game]);
+        $roundsPlayed = $game->getRounds()->count() - 1; //This is because we don't count the current round as already played
+        return $this->render('game/contestant/play.html.twig', [
+            'game' => $game,
+            'round' => $roundRepository->findCurrentRoundByGame($game),
+            'roundsPlayed' => $roundsPlayed,
+        ]);
     }
 
     #[Route('/game/contestant/end', name: 'game.contestant.end', methods: ['GET'])]

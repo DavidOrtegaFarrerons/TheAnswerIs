@@ -8,6 +8,12 @@
 
 {$SERVER_NAME}, www.{$SERVER_NAME} {
 
+    @admin path /admin*
+    basicauth @admin {
+        admin {$ADMIN_HASH}
+        realm "Admin Area"
+    }
+
 	# Redirect www → apex
 	@www host www.{$SERVER_NAME}
 	redir @www https://{$SERVER_NAME}{uri} permanent

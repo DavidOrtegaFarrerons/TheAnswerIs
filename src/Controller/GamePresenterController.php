@@ -35,8 +35,11 @@ class GamePresenterController extends AbstractController
     #[Route('/game/presenter/start/{presenterToken}', name: 'game.presenter.start', methods: ['GET'])]
     public function startAction(string $presenterToken, EntityManagerInterface $em, RoundRepository $roundRepository, HubInterface $hub) {
         $game = $em->getRepository(Game::class)->findOneBy(['presenterToken' => $presenterToken]);
-        if ($game->getRounds()->count() === 0) {
-            $roundRepository->createRound($game->getContest(), $game);
+        $roundsPlayed = $game->getRounds()->count();
+        if ($roundsPlayed === 0) {
+            $round = $roundRepository->createRound($game->getContest(), $game);
+        } else {
+            $round = $roundRepository->findCurrentRoundByGame($game);
         }
 
         $hub->publish(new Update(
@@ -47,26 +50,11 @@ class GamePresenterController extends AbstractController
             ])
         ));
 
-        return $this->render('game/presenter/play.html.twig', ['game' => $game]);
-    }
-
-    #[Route('/game/presenter/{presenterToken}/reveal-question', name: 'game.presenter.reveal.question', methods: ['POST'])]
-    public function revealQuestionAction(string $presenterToken, EntityManagerInterface $em, RoundRepository $roundRepository, HubInterface $hub) {
-        $game = $em->getRepository(Game::class)->findOneBy(['presenterToken' => $presenterToken]);
-        $round = $roundRepository->findCurrentRoundByGame($game);
-        $question = $round->getQuestion()->getTitle();
-
-        $hub->publish(new Update(
-            "/game/{$game->getId()}/{$game->getPresenterToken()}",
-            json_encode([
-                'type' => 'QUESTION_REVEALED',
-                'payload' => [
-                    'question' => $question,
-                ]
-            ])
-        ));
-
-        return new JsonResponse(['status' => 'ok']);
+        return $this->render('game/presenter/play.html.twig', [
+            'game' => $game,
+            'round' => $round,
+            'roundsPlayed' => $roundsPlayed,
+        ]);
     }
 
     #[Route('/game/presenter/{presenterToken}/reveal-answer/{option}', name: 'game.presenter.reveal.answer', methods: ['POST'])]
@@ -85,24 +73,6 @@ class GamePresenterController extends AbstractController
         if ($option === $round->getQuestion()->getCorrectAnswer()) {
             $payload['payload']['correct'] = true;
         }
-
-        $hub->publish(new Update(
-            "/game/{$game->getId()}/{$game->getPresenterToken()}",
-            json_encode($payload)
-        ));
-
-        return new JsonResponse(['status' => 'ok']);
-    }
-
-    #[Route('/game/presenter/{presenterToken}/select-answer/{option}', name: 'game.presenter.select.answer', methods: ['POST'])]
-    public function selectAnswerAction(string $presenterToken, string $option, EntityManagerInterface $em, RoundRepository $roundRepository, HubInterface $hub) {
-        $game = $em->getRepository(Game::class)->findOneBy(['presenterToken' => $presenterToken]);
-        $payload = [
-            'type' => 'ANSWER_SELECTED',
-            'payload' => [
-                'key' => $option
-            ]
-        ];
 
         $hub->publish(new Update(
             "/game/{$game->getId()}/{$game->getPresenterToken()}",
@@ -177,6 +147,24 @@ class GamePresenterController extends AbstractController
         return [];
     }
 
+    #[Route('/game/presenter/{presenterToken}/select-answer/{option}', name: 'game.presenter.select.answer', methods: ['POST'])]
+    public function selectAnswerAction(string $presenterToken, string $option, EntityManagerInterface $em, RoundRepository $roundRepository, HubInterface $hub) {
+        $game = $em->getRepository(Game::class)->findOneBy(['presenterToken' => $presenterToken]);
+        $payload = [
+            'type' => 'ANSWER_SELECTED',
+            'payload' => [
+                'key' => $option
+            ]
+        ];
+
+        $hub->publish(new Update(
+            "/game/{$game->getId()}/{$game->getPresenterToken()}",
+            json_encode($payload)
+        ));
+
+        return new JsonResponse(['status' => 'ok']);
+    }
+
     #[Route('/game/presenter/{presenterToken}/submit-answer/{option}', name: 'game.presenter.submit.answer', methods: ['POST'])]
     public function submitAnswerAction(string $presenterToken, string $option, EntityManagerInterface $em, RoundRepository $roundRepository, HubInterface $hub) {
         $game = $em->getRepository(Game::class)->findOneBy(['presenterToken' => $presenterToken]);
@@ -204,8 +192,8 @@ class GamePresenterController extends AbstractController
     public function nextRoundAction(string $presenterToken, EntityManagerInterface $em, RoundRepository $roundRepository, HubInterface $hub) : JsonResponse
     {
         $game = $em->getRepository(Game::class)->findOneBy(['presenterToken' => $presenterToken]);
-
-        if ($game->getContest()->getTotalQuestions() < $game->getRounds()->count()) {
+        $roundsPlayed = $game->getRounds()->count();
+        if ($game->getContest()->getTotalQuestions() <= $game->getRounds()->count()) {
             $hub->publish(new Update(
                 "/game/{$game->getId()}/{$game->getPresenterToken()}",
                 json_encode([
@@ -217,10 +205,13 @@ class GamePresenterController extends AbstractController
             return $this->json(['status' => 'end']);
         }
 
-        $roundRepository->createRound($game->getContest(), $game);
+        $round = $roundRepository->createRound($game->getContest(), $game);
         $payload = [
             'type' => 'NEXT_ROUND',
-            'payload' => []
+            'payload' => [
+                'questionText' => $round->getQuestion()->getTitle(),
+                'roundsPlayed' => $roundsPlayed,
+            ]
         ];
 
         $hub->publish(new Update(

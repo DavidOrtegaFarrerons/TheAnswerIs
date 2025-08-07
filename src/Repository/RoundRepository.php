@@ -24,18 +24,24 @@ class RoundRepository extends ServiceEntityRepository
 
     public function createRound(Contest $contest, Game $game): Round
     {
-        $round = new Round();
-        $round->setGame($game);
-        $difficulty = Difficulty::EASY;
+        $roundsSoFar = $game->getRounds()->count();
 
-        if ($game->getRounds()->count() > 5) {
-            $difficulty = Difficulty::MEDIUM;
-        } else if ($game->getRounds()->count() > 10) {
-            $difficulty = Difficulty::HARD;
-        }
-        $round->setQuestion($this->questionRepository->findQuestionByContestAndGameAndDifficulty($contest, $game, $difficulty));
-        $round->setQuestionNumber($game->getRounds()->count() + 1);
+        $difficulty = match (true) {
+            $roundsSoFar < 5   => Difficulty::EASY,
+            $roundsSoFar < 10  => Difficulty::MEDIUM,
+            default            => Difficulty::HARD,
+        };
+
+        $question = $this->questionRepository
+            ->findQuestionByContestAndGameAndDifficulty($contest, $game, $difficulty);
+
+        $round = new Round();
+        $round->setQuestion($question);
+        $round->setQuestionNumber($roundsSoFar + 1);
         $round->setStartedAt(new \DateTimeImmutable());
+
+        $round->setGame($game);
+
         $this->getEntityManager()->persist($round);
         $this->getEntityManager()->flush();
 

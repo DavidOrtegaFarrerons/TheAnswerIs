@@ -37,7 +37,7 @@ class Contest
     /**
      * @var Collection<int, Question>
      */
-    #[ORM\OneToMany(targetEntity: Question::class, mappedBy: 'contestId')]
+    #[ORM\OneToMany(targetEntity: Question::class, mappedBy: 'contest')]
     private Collection $questions;
 
     #[ORM\Column]
@@ -126,7 +126,7 @@ class Contest
     {
         if (!$this->questions->contains($question)) {
             $this->questions->add($question);
-            $question->setContestId($this);
+            $question->setContest($this);
         }
 
         return $this;
@@ -136,8 +136,8 @@ class Contest
     {
         if ($this->questions->removeElement($question)) {
             // set the owning side to null (unless already changed)
-            if ($question->getContestId() === $this) {
-                $question->setContestId(null);
+            if ($question->getContest() === $this) {
+                $question->setContest(null);
             }
         }
 
