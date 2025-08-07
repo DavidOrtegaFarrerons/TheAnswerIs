@@ -3,9 +3,11 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Contest;
+use App\Enum\Joker;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ArrayField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
@@ -31,8 +33,13 @@ class ContestCrudController extends AbstractCrudController
 
             IntegerField::new('totalQuestions', 'Total questions'),
 
-            ArrayField::new('allowedJokers', 'Allowed jokers')
+            ChoiceField::new('allowedJokers', 'Comodines permitidos')
+                ->allowMultipleChoices()
+                ->renderExpanded()
+                ->setChoices(Joker::choices())
+                ->setFormTypeOption('by_reference', false)
                 ->onlyOnForms(),
+
             ArrayField::new('difficultyCurve', 'Difficulty curve')
                 ->onlyOnForms(),
 

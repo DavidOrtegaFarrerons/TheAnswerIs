@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Enum\Joker;
 use App\Repository\RoundRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
@@ -44,6 +45,9 @@ class Round
 
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $finishedAt = null;
+
+    #[ORM\Column]
+    private ?array $usedJokers = [];
 
     public function getId(): ?Uuid
     {
@@ -157,4 +161,29 @@ class Round
 
         return $this;
     }
+
+    public function getUsedJokers(): ?array
+    {
+        return $this->usedJokers;
+    }
+
+    public function setUsedJokers(?array $usedJokers): static
+    {
+        $this->usedJokers = $usedJokers;
+
+        return $this;
+    }
+
+    public function hasUsed(Joker $joker): bool
+    {
+        return in_array($joker->value, $this->usedJokers, true);
+    }
+
+    public function useJoker(Joker $joker): void
+    {
+        if (!$this->hasUsed($joker)) {
+            $this->usedJokers[] = $joker->value;
+        }
+    }
 }
+

@@ -21,7 +21,7 @@ class DashboardController extends AbstractDashboardController
         private readonly QuestionRepository $questionRepository,
     ) {}
 
-    #[Route('/', name: 'dashboard')]
+    #[Route('/admin', name: 'dashboard')]
     public function index(): Response
     {
         return $this->render('admin/dashboard.html.twig', [

@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use App\Entity\Contest;
 use App\Entity\Game;
+use App\Entity\Round;
+use App\Enum\Joker;
 use App\Repository\RoundRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -108,6 +110,71 @@ class GamePresenterController extends AbstractController
         ));
 
         return new JsonResponse(['status' => 'ok']);
+    }
+
+    #[Route(
+        '/game/presenter/{presenterToken}/use-joker/{joker}',
+        name: 'game.presenter.use_joker',
+        methods: ['POST']
+    )]
+    public function useJokerAction(
+        string $presenterToken,
+        string $joker,
+        EntityManagerInterface $em,
+        RoundRepository $roundRepository,
+        HubInterface $hub,
+    ): JsonResponse {
+        $jokerEnum = Joker::from($joker);
+        $game      = $em->getRepository(Game::class)
+            ->findOneBy(['presenterToken' => $presenterToken]);
+        $round     = $roundRepository->findCurrentRoundByGame($game);
+
+        if (!in_array($jokerEnum->value, $game->getContest()->getAllowedJokers(), true)) {
+            return $this->json(['error' => 'joker_not_allowed'], 400);
+        }
+        if ($round->hasUsed($jokerEnum)) {
+            return $this->json(['error' => 'joker_already_used'], 400);
+        }
+
+        $payload = match ($jokerEnum) {
+            Joker::FIFTY_FIFTY => $this->applyFiftyFifty($round),
+            Joker::ROULETTE    => $this->applyRoulette($round),
+            Joker::PHONE       => $this->applyPhone($round),
+        };
+
+        $round->useJoker($jokerEnum);
+        $em->flush();
+
+        $hub->publish(new Update(
+            "/game/{$game->getId()}/{$game->getPresenterToken()}",
+            json_encode([
+                'type'    => 'JOKER_USED',
+                'payload' => $payload + ['joker' => $jokerEnum->value],
+            ])
+        ));
+
+        return $this->json(['status' => 'ok']);
+    }
+
+    /** returns array<int,string> keys to hide */
+    private function applyFiftyFifty(Round $round): array
+    {
+        $wrong = array_diff(['a','b','c','d'], [$round->getQuestion()->getCorrectAnswer()]);
+        shuffle($wrong);
+        return ['remove' => array_slice($wrong, 0, 2)];
+    }
+
+    private function applyRoulette(Round $round): array
+    {
+        $wrong = array_diff(['a','b','c','d'], [$round->getQuestion()->getCorrectAnswer()]);
+        shuffle($wrong);
+        $count = random_int(0, 3);
+        return ['remove' => array_slice($wrong, 0, $count), 'count' => $count];
+    }
+
+    private function applyPhone(Round $round): array
+    {
+        return [];
     }
 
     #[Route('/game/presenter/{presenterToken}/submit-answer/{option}', name: 'game.presenter.submit.answer', methods: ['POST'])]
