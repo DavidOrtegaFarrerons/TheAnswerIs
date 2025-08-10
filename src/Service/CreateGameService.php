@@ -7,6 +7,7 @@ use App\Entity\Game;
 use App\Exception\ContestNotFoundException;
 use App\Factory\GameFactory;
 use App\Repository\ContestRepository;
+use App\Repository\GameRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
 readonly class CreateGameService
@@ -15,7 +16,8 @@ readonly class CreateGameService
     public function __construct(
         private GameFactory                 $gameFactory,
         private ContestRepository           $contestRepository,
-        private EntityManagerInterface      $em
+        private EntityManagerInterface      $em,
+        private GameRepository              $gameRepository,
     )
     {
     }
@@ -30,7 +32,7 @@ readonly class CreateGameService
             }
 
             $game = $this->gameFactory->createFromContest($contest);
-            $this->em->persist($game);
+            $this->gameRepository->add($game);
 
             return $game;
         });

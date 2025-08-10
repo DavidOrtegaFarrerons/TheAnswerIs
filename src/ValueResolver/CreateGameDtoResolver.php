@@ -14,7 +14,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 readonly class CreateGameDtoResolver implements ValueResolverInterface
 {
 
-    public const TARGETED_VALUE_RESOLVER_NAME = 'contestId';
+    public const TARGETED_VALUE_RESOLVER_NAME = 'create_game';
 
     public function __construct(
         private ValidatorInterface $validator,
