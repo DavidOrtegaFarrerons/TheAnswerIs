@@ -22,6 +22,13 @@ COPY --chown=www-data:www-data composer.json composer.lock symfony.lock* ./
 ARG APP_ENV=prod
 ENV APP_ENV=${APP_ENV} COMPOSER_ALLOW_SUPERUSER=1
 
+RUN if [ "$APP_ENV" = "dev" ]; then \
+      echo 'opcache.enable=0' > /usr/local/etc/php/conf.d/99-dev.ini; \
+      echo 'opcache.validate_timestamps=1' >> /usr/local/etc/php/conf.d/99-dev.ini; \
+      echo 'opcache.revalidate_freq=0' >> /usr/local/etc/php/conf.d/99-dev.ini; \
+      echo 'opcache.file_update_protection=0' >> /usr/local/etc/php/conf.d/99-dev.ini; \
+    fi
+
 RUN if [ "$APP_ENV" = "prod" ]; then \
       composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts; \
     else \

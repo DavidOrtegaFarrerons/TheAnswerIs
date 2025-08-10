@@ -7,7 +7,7 @@ services:
             php-fpm"
         volumes:
             - .:/var/www/html
-            - ./docker/php/dev.ini:/usr/local/etc/php/conf.d/99-dev.ini
+            - ./docker/php/dev.ini:/usr/local/etc/php/conf.d/zzzz-dev.ini:ro
             - ./var:/var/www/html/var
         # optional: expose FPM only inside the network (no ports needed)
 

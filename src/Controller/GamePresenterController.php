@@ -17,7 +17,9 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class GamePresenterController extends AbstractController
 {
-    #[Route('/game/presenter/lobby/{gameId}', name: 'game_presenter_lobby', methods: ['GET'])]
+    const GAME_PRESENTER_LOBBY_ROUTE_NAME = 'game_presenter_lobby';
+
+    #[Route('/game/presenter/lobby/{gameId}', name: self::GAME_PRESENTER_LOBBY_ROUTE_NAME, methods: ['GET'])]
     public function lobbyAction(string $gameId, EntityManagerInterface $em) {
 
         $game = $em->getRepository(Game::class)->find($gameId);
