@@ -3,17 +3,69 @@
 {% block title %}Waiting Room{% endblock %}
 
 {% block body %}
-    <div class="min-h-screen bg-gradient-to-br from-purple-700 via-indigo-700 to-blue-700 flex items-center justify-center p-6">
+    <div class="min-h-screen bg-gradient-to-br from-purple-700 via-indigo-700 to-blue-700 flex flex-col items-center justify-center p-6 space-y-8">
+
+        {% if game.contest and game.contest.imageUrl %}
+            <div class="w-full max-w-2xl overflow-hidden rounded-3xl shadow-2xl border border-white/10">
+                <img
+                    src="{{ game.contest.imageUrl }}"
+                    alt="{{ game.contest.name ?? 'Contest' }}"
+                    class="w-full h-256 object-cover"
+                />
+            </div>
+        {% endif %}
+
         <div class="w-full max-w-sm rounded-3xl bg-neutral-900/80 backdrop-blur-sm text-white px-10 py-14 space-y-8 shadow-2xl shadow-black/50 text-center">
             <div class="text-6xl">⌛</div>
             <h1 class="text-3xl font-extrabold tracking-tight">Sala de espera</h1>
             <p class="text-gray-300">Te has unido a la partida. Espera a que el presentador la inicie.</p>
+
+            {% if game.contest and game.contest.name %}
+                <div class="mt-2 text-sm text-white/80">
+                    Participando en: <span class="font-semibold">{{ game.contest.name }}</span>
+                </div>
+            {% endif %}
 
             <div class="flex justify-center">
                 <svg class="animate-spin h-8 w-8 text-yellow-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                 </svg>
+            </div>
+        </div>
+    </div>
+
+    <div id="birthdayModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+        <div class="relative z-10 flex min-h-full items-center justify-center p-6">
+            <div class="w-full max-w-md rounded-2xl bg-white text-gray-900 shadow-2xl">
+                <div class="flex items-center justify-between p-5 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold">
+                        🎉 ¡Feliz cumpleaños! 🎂
+                    </h2>
+                    <button id="birthdayClose" class="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 8.586l4.95-4.95 1.414 1.415L11.414 10l4.95 4.95-1.414 1.414L10 11.414l-4.95 4.95-1.414-1.414L8.586 10l-4.95-4.95L5.05 3.636 10 8.586z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="p-6 space-y-3 text-center">
+                    <div class="text-5xl">🎂</div>
+                    <p class="text-base text-gray-700">
+                        Feliz cumpleaños, Víctor 🎉🎂
+
+                        Hoy no solo celebramos un año más de tu vida, sino también todas las memorias, risas y momentos que hemos compartido. Gracias por ser esa persona tan auténtica, leal y generosa que siempre está ahí. Nos sentimos todos afortunados de haberte encontrado en este camino y de poder seguir sumando historias juntos.
+
+                        Por todos los buenos tiempos que hemos vivido, los que estamos disfrutando ahora y todos los que vendrán… ¡que nunca nos falte la amistad, las risas y las aventuras!
+
+                        ¡Eres un gran amigo! 🥳💪
+                    </p>
+                </div>
+                <div class="p-5 border-t border-gray-200 flex justify-center">
+                    <button id="birthdayOkay" class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-white font-medium shadow hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
+                        ¡Gracias!
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -32,5 +84,27 @@
                 window.location.href = "{{ path('game.contestant.start', { id: game.id, publicToken: game.publicToken }) }}";
             }
         };
+
+        const modal = document.getElementById('birthdayModal');
+        const closeBtn = document.getElementById('birthdayClose');
+        const okBtn = document.getElementById('birthdayOkay');
+
+        function openBirthdayModal() {
+            modal.classList.remove('hidden');
+        }
+
+        function closeBirthdayModal() {
+            modal.classList.add('hidden');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            openBirthdayModal();
+        });
+
+        closeBtn?.addEventListener('click', closeBirthdayModal);
+        okBtn?.addEventListener('click', closeBirthdayModal);
+        modal?.addEventListener('click', (e) => {
+            if (e.target === modal) closeBirthdayModal();
+        });
     </script>
 {% endblock %}
