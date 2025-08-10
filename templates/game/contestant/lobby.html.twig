@@ -35,41 +35,6 @@
         </div>
     </div>
 
-    <div id="birthdayModal" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-        <div class="relative z-10 flex min-h-full items-center justify-center p-6">
-            <div class="w-full max-w-md rounded-2xl bg-white text-gray-900 shadow-2xl">
-                <div class="flex items-center justify-between p-5 border-b border-gray-200">
-                    <h2 class="text-lg font-semibold">
-                        🎉 ¡Feliz cumpleaños! 🎂
-                    </h2>
-                    <button id="birthdayClose" class="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 8.586l4.95-4.95 1.414 1.415L11.414 10l4.95 4.95-1.414 1.414L10 11.414l-4.95 4.95-1.414-1.414L8.586 10l-4.95-4.95L5.05 3.636 10 8.586z" clip-rule="evenodd" />
-                        </svg>
-                    </button>
-                </div>
-                <div class="p-6 space-y-3 text-center">
-                    <div class="text-5xl">🎂</div>
-                    <p class="text-base text-gray-700">
-                        Feliz cumpleaños, Víctor 🎉🎂
-
-                        Hoy no solo celebramos un año más de tu vida, sino también todas las memorias, risas y momentos que hemos compartido. Gracias por ser esa persona tan auténtica, leal y generosa que siempre está ahí. Nos sentimos todos afortunados de haberte encontrado en este camino y de poder seguir sumando historias juntos.
-
-                        Por todos los buenos tiempos que hemos vivido, los que estamos disfrutando ahora y todos los que vendrán… ¡que nunca nos falte la amistad, las risas y las aventuras!
-
-                        ¡Eres un gran amigo! 🥳💪
-                    </p>
-                </div>
-                <div class="p-5 border-t border-gray-200 flex justify-center">
-                    <button id="birthdayOkay" class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-white font-medium shadow hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
-                        ¡Gracias!
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script>
         fetch('/api/game/{{ game.id }}/contestant-joined', {
             method: 'POST',
@@ -84,18 +49,6 @@
                 window.location.href = "{{ path('game.contestant.start', { id: game.id, publicToken: game.publicToken }) }}";
             }
         };
-
-        const modal = document.getElementById('birthdayModal');
-        const closeBtn = document.getElementById('birthdayClose');
-        const okBtn = document.getElementById('birthdayOkay');
-
-        function openBirthdayModal() {
-            modal.classList.remove('hidden');
-        }
-
-        function closeBirthdayModal() {
-            modal.classList.add('hidden');
-        }
 
         document.addEventListener('DOMContentLoaded', () => {
             openBirthdayModal();
