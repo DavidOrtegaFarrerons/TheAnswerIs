@@ -7,6 +7,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Attribute\AsTargetedValueResolver;
 use Symfony\Component\HttpKernel\Controller\ValueResolverInterface;
 use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Uid\Uuid;
 
@@ -23,7 +24,11 @@ readonly class GameByIdResolver implements ValueResolverInterface
         $gameId = $request->get('gameId');
 
         if ($gameId === null) {
-            throw new NotFoundHttpException("Invalid gameId");
+            throw new BadRequestHttpException("gameId cannot be empty");
+        }
+
+        if (!Uuid::isValid($gameId)) {
+            throw new NotFoundHttpException('gameId is not valid');
         }
 
         yield $this->gameRepository->findOneById(Uuid::fromString($gameId));

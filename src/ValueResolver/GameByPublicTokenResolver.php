@@ -27,7 +27,11 @@ public const TARGETED_VALUE_RESOLVER_NAME = 'game_by_public_token';
         $publicToken = $request->get('publicToken');
 
         if ($publicToken === null) {
-            throw new NotFoundHttpException('Invalid token');
+            throw new NotFoundHttpException('Public token cannot be empty');
+        }
+
+        if (!Uuid::isValid($publicToken)) {
+            throw new NotFoundHttpException('Public token is invalid');
         }
 
         yield $this->gameRepository->findOneByPublicToken(Uuid::fromString($publicToken));
