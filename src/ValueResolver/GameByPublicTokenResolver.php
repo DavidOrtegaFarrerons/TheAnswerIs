@@ -3,6 +3,7 @@
 namespace App\ValueResolver;
 
 use App\Repository\GameRepository;
+use App\Service\Token\TokenInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Attribute\AsTargetedValueResolver;
 use Symfony\Component\HttpKernel\Controller\ValueResolverInterface;
@@ -18,6 +19,7 @@ public const TARGETED_VALUE_RESOLVER_NAME = 'game_by_public_token';
 
     public function __construct(
         private readonly GameRepository $gameRepository,
+        private readonly TokenInterface $token
     )
     {
     }
@@ -30,10 +32,10 @@ public const TARGETED_VALUE_RESOLVER_NAME = 'game_by_public_token';
             throw new NotFoundHttpException('Public token cannot be empty');
         }
 
-        if (!Uuid::isValid($publicToken)) {
+        if (!$this->token->isValid($publicToken)) {
             throw new NotFoundHttpException('Public token is invalid');
         }
 
-        yield $this->gameRepository->findOneByPublicToken(Uuid::fromString($publicToken));
+        yield $this->gameRepository->findOneByPublicToken($this->token->fromString($publicToken));
     }
 }

@@ -11,4 +11,14 @@ class V4UuidTokenGenerator implements TokenInterface
     {
         return Uuid::v4();
     }
+
+    public function isValid(string $token): bool
+    {
+        return UuidV4::isValid($token);
+    }
+
+    public function fromString(string $token): Uuid
+    {
+        return UuidV4::fromString($token);
+    }
 }
