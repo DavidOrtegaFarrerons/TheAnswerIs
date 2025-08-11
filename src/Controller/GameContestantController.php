@@ -4,9 +4,12 @@ namespace App\Controller;
 
 use App\Entity\Game;
 use App\Repository\RoundRepository;
+use App\ValueResolver\GameByPublicTokenResolver;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\ValueResolver;
 use Symfony\Component\Mercure\HubInterface;
 use Symfony\Component\Mercure\Update;
 use Symfony\Component\Routing\Annotation\Route;
@@ -14,8 +17,10 @@ use Symfony\Component\Routing\Annotation\Route;
 class GameContestantController extends AbstractController
 {
     #[Route('/game/contestant/lobby/{publicToken}', name: 'game_contestant_lobby', methods: ['GET'])]
-    public function contestantLobbyAction(string $publicToken, EntityManagerInterface $em) {
-        $game = $em->getRepository(Game::class)->findOneBy(['publicToken' => $publicToken]);
+    public function contestantLobby(
+        #[ValueResolver(GameByPublicTokenResolver::TARGETED_VALUE_RESOLVER_NAME)] $game
+    ): Response
+    {
         return $this->render('game/contestant/lobby.html.twig', ['game' => $game]);
     }
 

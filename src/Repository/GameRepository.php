@@ -21,6 +21,11 @@ class GameRepository extends ServiceEntityRepository
         $this->getEntityManager()->persist($game);
     }
 
+    public function findOneByPublicToken(string $token) : ?Game
+    {
+        return $this->findOneBy(['publicToken' => $token]);
+    }
+
     //    /**
     //     * @return Game[] Returns an array of Game objects
     //     */
