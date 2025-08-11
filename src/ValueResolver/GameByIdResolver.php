@@ -11,25 +11,21 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Uid\Uuid;
 
 #[AsTargetedValueResolver(self::TARGETED_VALUE_RESOLVER_NAME)]
-class GameByPublicTokenResolver implements ValueResolverInterface
+readonly class GameByIdResolver implements ValueResolverInterface
 {
-
-public const TARGETED_VALUE_RESOLVER_NAME = 'game_by_public_token';
-
-    public function __construct(
-        private readonly GameRepository $gameRepository,
-    )
+    public const TARGETED_VALUE_RESOLVER_NAME = 'game_by_id';
+    public function __construct(private GameRepository $gameRepository)
     {
     }
 
     public function resolve(Request $request, ArgumentMetadata $argument): iterable
     {
-        $publicToken = $request->get('publicToken');
+        $gameId = $request->get('gameId');
 
-        if ($publicToken === null) {
-            throw new NotFoundHttpException('Invalid token');
+        if ($gameId === null) {
+            throw new NotFoundHttpException("Invalid gameId");
         }
 
-        yield $this->gameRepository->findOneByPublicToken(Uuid::fromString($publicToken));
+        yield $this->gameRepository->findOneById(Uuid::fromString($gameId));
     }
 }

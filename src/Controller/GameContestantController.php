@@ -16,7 +16,9 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class GameContestantController extends AbstractController
 {
-    #[Route('/game/contestant/lobby/{publicToken}', name: 'game_contestant_lobby', methods: ['GET'])]
+    const GAME_CONTESTANT_LOBBY_ROUTE_NAME = 'game_contestant_lobby';
+
+    #[Route('/game/contestant/lobby/{publicToken}', name: self::GAME_CONTESTANT_LOBBY_ROUTE_NAME, methods: ['GET'])]
     public function contestantLobby(
         #[ValueResolver(GameByPublicTokenResolver::TARGETED_VALUE_RESOLVER_NAME)] $game
     ): Response
@@ -25,7 +27,8 @@ class GameContestantController extends AbstractController
     }
 
     #[Route('/api/game/{game}/contestant-joined', name: 'contestant_joined', methods: ['POST'])]
-    public function contestantJoined(Game $game, HubInterface $hub) {
+    public function contestantJoined(Game $game, HubInterface $hub): JsonResponse
+    {
         $update = new Update(
             "/game/{$game->getId()}",
             json_encode([
@@ -40,7 +43,8 @@ class GameContestantController extends AbstractController
     }
 
     #[Route('/game/contestant/start/{publicToken}', name: 'game.contestant.start', methods: ['GET'])]
-    public function startAction(string $publicToken, EntityManagerInterface $em, RoundRepository $roundRepository) {
+    public function startAction(string $publicToken, EntityManagerInterface $em, RoundRepository $roundRepository): Response
+    {
         $game = $em->getRepository(Game::class)->findOneBy(['publicToken' => $publicToken]);
         $roundsPlayed = $game->getRounds()->count() - 1; //This is because we don't count the current round as already played
         return $this->render('game/contestant/play.html.twig', [
@@ -51,8 +55,8 @@ class GameContestantController extends AbstractController
     }
 
     #[Route('/game/contestant/end', name: 'game.contestant.end', methods: ['GET'])]
-    public function endAction() {
+    public function endAction(): Response
+    {
         return $this->render('game/contestant/end.html.twig');
     }
-
 }

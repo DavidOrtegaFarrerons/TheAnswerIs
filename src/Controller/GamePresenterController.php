@@ -7,9 +7,11 @@ use App\Entity\Game;
 use App\Entity\Round;
 use App\Enum\Joker;
 use App\Repository\RoundRepository;
+use App\ValueResolver\GameByIdResolver;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpKernel\Attribute\ValueResolver;
 use Symfony\Component\Mercure\HubInterface;
 use Symfony\Component\Mercure\Update;
 use Symfony\Component\Routing\Attribute\Route;
@@ -20,16 +22,10 @@ class GamePresenterController extends AbstractController
     const GAME_PRESENTER_LOBBY_ROUTE_NAME = 'game_presenter_lobby';
 
     #[Route('/game/presenter/lobby/{gameId}', name: self::GAME_PRESENTER_LOBBY_ROUTE_NAME, methods: ['GET'])]
-    public function lobbyAction(string $gameId, EntityManagerInterface $em) {
-
-        $game = $em->getRepository(Game::class)->find($gameId);
-        $publicUrl = $this->generateUrl('game_contestant_lobby', [
-            'publicToken' => $game->getPublicToken(),
-        ], UrlGeneratorInterface::ABSOLUTE_URL);
-
-
+    public function lobbyAction(
+        #[ValueResolver(GameByIdResolver::TARGETED_VALUE_RESOLVER_NAME)] $game
+    ) {
         return $this->render('game/presenter/lobby.html.twig', [
-            'publicUrl' => $publicUrl,
             'game' => $game,
         ]);
     }

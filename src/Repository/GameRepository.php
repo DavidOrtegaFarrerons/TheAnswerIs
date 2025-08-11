@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\Game;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * @extends ServiceEntityRepository<Game>
@@ -21,9 +22,14 @@ class GameRepository extends ServiceEntityRepository
         $this->getEntityManager()->persist($game);
     }
 
-    public function findOneByPublicToken(string $token) : ?Game
+    public function findOneByPublicToken(Uuid $token) : ?Game
     {
         return $this->findOneBy(['publicToken' => $token]);
+    }
+
+    public function findOneById(Uuid $id) : ?Game
+    {
+        return $this->findOneBy(['id' => $id]);
     }
 
     //    /**
