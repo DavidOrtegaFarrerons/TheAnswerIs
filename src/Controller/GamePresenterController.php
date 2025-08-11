@@ -15,7 +15,6 @@ use Symfony\Component\HttpKernel\Attribute\ValueResolver;
 use Symfony\Component\Mercure\HubInterface;
 use Symfony\Component\Mercure\Update;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class GamePresenterController extends AbstractController
 {

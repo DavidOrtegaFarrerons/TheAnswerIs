@@ -1,8 +1,11 @@
 {% extends 'base.html.twig' %}
 
+{% set routeName = constant('App\\Controller\\GameContestantController::GAME_CONTESTANT_LOBBY_ROUTE_NAME') %}
+{% set publicUrl = absolute_url(path(routeName, { publicToken: game.publicToken })) %}
 {% block title %}Game Lobby{% endblock %}
 
 {% block body %}
+
     <div class="min-h-screen bg-gradient-to-br from-purple-700 via-indigo-700 to-blue-700 flex items-center justify-center p-6">
         <div class="w-full max-w-lg rounded-3xl bg-neutral-900/80 backdrop-blur-sm text-white px-10 py-14 space-y-10 shadow-2xl shadow-black/50">
             <div class="text-center space-y-4">
