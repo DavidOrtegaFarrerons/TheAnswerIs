@@ -27,6 +27,11 @@ class GameRepository extends ServiceEntityRepository
         return $this->findOneBy(['publicToken' => $token]);
     }
 
+    public function findOneByPresenterToken(Uuid $token) : ?Game
+    {
+        return $this->findOneBy(['presenterToken' => $token]);
+    }
+
     public function findOneById(Uuid $id) : ?Game
     {
         return $this->findOneBy(['id' => $id]);

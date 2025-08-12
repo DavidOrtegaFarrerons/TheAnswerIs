@@ -131,7 +131,7 @@ class Question
         return $this;
     }
 
-    public function getOptionByString(string $option) {
+    public function getOptionText(string $option) {
         return match ($option) {
             'a' => $this->getOptionA(),
             'b' => $this->getOptionB(),

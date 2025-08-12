@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use App\Entity\Game;
 use App\Repository\RoundRepository;
+use App\Service\ContestantJoinsService;
+use App\Service\StartContestantGameService;
 use App\ValueResolver\GameByPublicTokenResolver;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -27,30 +29,29 @@ class GameContestantController extends AbstractController
     }
 
     #[Route('/api/game/{game}/contestant-joined', name: 'contestant_joined', methods: ['POST'])]
-    public function contestantJoined(Game $game, HubInterface $hub): JsonResponse
+    public function contestantJoined(
+        Game $game,
+        ContestantJoinsService $contestantJoinsService
+    ): JsonResponse
     {
-        $update = new Update(
-            "/game/{$game->getId()}",
-            json_encode([
-                'type' => 'CONTESTANT_JOINED',
-                'payload' => ['timestamp' => time()],
-            ])
-        );
-
-        $hub->publish($update);
+        $contestantJoinsService->join($game);
 
         return new JsonResponse(['status' => 'ok']);
     }
 
     #[Route('/game/contestant/start/{publicToken}', name: 'game.contestant.start', methods: ['GET'])]
-    public function startAction(string $publicToken, EntityManagerInterface $em, RoundRepository $roundRepository): Response
+    public function startAction(
+        #[ValueResolver(GameByPublicTokenResolver::TARGETED_VALUE_RESOLVER_NAME)]
+        Game $game,
+        StartContestantGameService $startContestantGameService
+    ): Response
     {
-        $game = $em->getRepository(Game::class)->findOneBy(['publicToken' => $publicToken]);
-        $roundsPlayed = $game->getRounds()->count() - 1; //This is because we don't count the current round as already played
+        $dto = $startContestantGameService->start($game);
+
         return $this->render('game/contestant/play.html.twig', [
-            'game' => $game,
-            'round' => $roundRepository->findCurrentRoundByGame($game),
-            'roundsPlayed' => $roundsPlayed,
+            'game' => $dto->getGame(),
+            'round' => $dto->getRound(),
+            'roundsPlayed' => $dto->getRoundsPlayed(),
         ]);
     }
 

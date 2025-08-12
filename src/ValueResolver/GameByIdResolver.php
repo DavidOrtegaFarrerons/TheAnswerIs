@@ -26,7 +26,7 @@ readonly class GameByIdResolver implements ValueResolverInterface
 
     public function resolve(Request $request, ArgumentMetadata $argument): iterable
     {
-        $gameId = $request->get('gameId');
+        $gameId = $request->attributes->get('gameId');
 
         if ($gameId === null) {
             throw new BadRequestHttpException("gameId cannot be empty");

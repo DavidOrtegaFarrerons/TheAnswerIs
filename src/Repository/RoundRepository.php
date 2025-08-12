@@ -14,38 +14,13 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class RoundRepository extends ServiceEntityRepository
 {
-    public function __construct(
-        ManagerRegistry $registry,
-        private readonly QuestionRepository $questionRepository,
-    )
+    public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Round::class);
     }
-
-    public function createRound(Contest $contest, Game $game): Round
+    public function add(Round $round) : void
     {
-        $roundsSoFar = $game->getRounds()->count();
-
-        $difficulty = match (true) {
-            $roundsSoFar < 5   => Difficulty::EASY,
-            $roundsSoFar < 10  => Difficulty::MEDIUM,
-            default            => Difficulty::HARD,
-        };
-
-        $question = $this->questionRepository
-            ->findQuestionByContestAndGameAndDifficulty($contest, $game, $difficulty);
-
-        $round = new Round();
-        $round->setQuestion($question);
-        $round->setQuestionNumber($roundsSoFar + 1);
-        $round->setStartedAt(new \DateTimeImmutable());
-
-        $round->setGame($game);
-
         $this->getEntityManager()->persist($round);
-        $this->getEntityManager()->flush();
-
-        return $round;
     }
 
     public function findCurrentRoundByGame(Game $game) : ?Round

@@ -9,13 +9,12 @@ use Symfony\Component\HttpKernel\Attribute\AsTargetedValueResolver;
 use Symfony\Component\HttpKernel\Controller\ValueResolverInterface;
 use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\Uid\Uuid;
 
 #[AsTargetedValueResolver(self::TARGETED_VALUE_RESOLVER_NAME)]
-class GameByPublicTokenResolver implements ValueResolverInterface
+class GameByPresenterTokenResolver implements ValueResolverInterface
 {
 
-public const TARGETED_VALUE_RESOLVER_NAME = 'game_by_public_token';
+public const TARGETED_VALUE_RESOLVER_NAME = 'game_by_presenter_token';
 
     public function __construct(
         private readonly GameRepository $gameRepository,
@@ -26,16 +25,16 @@ public const TARGETED_VALUE_RESOLVER_NAME = 'game_by_public_token';
 
     public function resolve(Request $request, ArgumentMetadata $argument): iterable
     {
-        $publicToken = $request->attributes->get('publicToken');
+        $presenterToken = $request->attributes->get('presenterToken');
 
-        if ($publicToken === null) {
-            throw new NotFoundHttpException('Public token cannot be empty');
+        if ($presenterToken === null) {
+            throw new NotFoundHttpException('Presenter token cannot be empty');
         }
 
-        if (!$this->token->isValid($publicToken)) {
-            throw new NotFoundHttpException('Public token is invalid');
+        if (!$this->token->isValid($presenterToken)) {
+            throw new NotFoundHttpException('Presenter token is invalid');
         }
 
-        yield $this->gameRepository->findOneByPublicToken($this->token->fromString($publicToken));
+        yield $this->gameRepository->findOneByPresenterToken($this->token->fromString($presenterToken));
     }
 }
