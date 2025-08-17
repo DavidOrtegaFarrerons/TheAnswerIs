@@ -6,6 +6,7 @@ use App\Entity\Game;
 use App\Entity\Round;
 use App\Enum\Joker;
 use App\Repository\RoundRepository;
+use App\Service\Joker\UseJokerService;
 use App\Service\NextRoundService;
 use App\Service\RevealOptionService;
 use App\Service\SelectAnswerService;
@@ -69,40 +70,18 @@ class GamePresenterController extends AbstractController
         methods: ['POST']
     )]
     public function useJokerAction(
-        string $presenterToken,
+        #[ValueResolver(GameByPresenterTokenResolver::TARGETED_VALUE_RESOLVER_NAME)]
+        Game $game,
         string $joker,
-        EntityManagerInterface $em,
-        RoundRepository $roundRepository,
-        HubInterface $hub,
+        UseJokerService $useJokerService,
     ): JsonResponse {
-        $jokerEnum = Joker::from($joker);
-        $game      = $em->getRepository(Game::class)
-            ->findOneBy(['presenterToken' => $presenterToken]);
-        $round     = $roundRepository->findCurrentRoundByGame($game);
+        $joker = Joker::from($joker);
 
-        if (!in_array($jokerEnum->value, $game->getContest()->getAllowedJokers(), true)) {
+        if (!in_array($joker->value, $game->getContest()->getAllowedJokers(), true)) {
             return $this->json(['error' => 'joker_not_allowed'], 400);
         }
-        if ($round->hasUsed($jokerEnum)) {
-            return $this->json(['error' => 'joker_already_used'], 400);
-        }
 
-        $payload = match ($jokerEnum) {
-            Joker::FIFTY_FIFTY => $this->applyFiftyFifty($round),
-            Joker::ROULETTE    => $this->applyRoulette($round),
-            Joker::PHONE       => $this->applyPhone($round),
-        };
-
-        $round->useJoker($jokerEnum);
-        $em->flush();
-
-        $hub->publish(new Update(
-            "/game/{$game->getId()}/{$game->getPresenterToken()}",
-            json_encode([
-                'type'    => 'JOKER_USED',
-                'payload' => $payload + ['joker' => $jokerEnum->value],
-            ])
-        ));
+        $useJokerService->use($joker, $game);
 
         return $this->json(['status' => 'ok']);
     }

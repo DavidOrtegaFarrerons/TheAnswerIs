@@ -20,3 +20,11 @@ services:
     # please note that last definitions always *replace* previous ones
 
     App\Service\Token\TokenInterface: '@App\Service\Token\V4UuidTokenGenerator'
+
+    _instanceof:
+        App\Service\Joker\JokerStrategyInterface:
+            tags: ['app.joker.strategy']
+
+    App\Service\Joker\UseJokerService:
+        arguments:
+            $strategies: !tagged_iterator 'app.joker.strategy'

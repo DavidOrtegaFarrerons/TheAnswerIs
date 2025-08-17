@@ -9,6 +9,7 @@ use App\Event\Game\AnswerSubmittedEvent;
 use App\Event\Game\ContestantJoinedEvent;
 use App\Event\Game\GameEndedEvent;
 use App\Event\Game\GameStartedEvent;
+use App\Event\Game\JokerUsedEvent;
 use App\Event\Game\NextRoundEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Mercure\HubInterface;
@@ -45,6 +46,9 @@ class GameMercureSubscriber implements EventSubscriberInterface
             ],
             NextRoundEvent::class => [
                 ['onNextRound', 0],
+            ],
+            JokerUsedEvent::class => [
+                ['onJokerUsed', 0],
             ]
         ];
     }
@@ -145,6 +149,17 @@ class GameMercureSubscriber implements EventSubscriberInterface
         $this->hub->publish(new Update(
             "/game/{$event->getGame()->getId()}/{$event->getGame()->getPresenterToken()}",
             json_encode($payload)
+        ));
+    }
+
+    public function onJokerUsed(JokerUsedEvent $event) : void
+    {
+        $this->hub->publish(new Update(
+            "/game/{$event->getGame()->getId()}/{$event->getGame()->getPresenterToken()}",
+            json_encode([
+                'type'    => 'JOKER_USED',
+                'payload' => $event->getResult(),
+            ])
         ));
     }
 }

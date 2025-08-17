@@ -8,12 +8,15 @@ enum Joker : string
     case ROULETTE    = 'roulette';
     case PHONE       = 'phone';
 
+    case MAGE       = 'mage';
+
     public function label(): string
     {
         return match ($this) {
             self::FIFTY_FIFTY => '50 / 50',
             self::ROULETTE    => 'Ruleta',
             self::PHONE       => 'Llamada',
+            self::MAGE        => 'Mago',
         };
     }
 
