@@ -4,28 +4,32 @@ namespace App\Event\Game;
 
 use Symfony\Component\Uid\Uuid;
 
-class NextRoundEvent implements GameEventInterface
+class OptionRevealedEvent implements GameEventInterface
 {
     private Uuid $gameId;
     private Uuid $presenterToken;
     private Uuid $publicToken;
-    private string $questionTitle;
-    private string $roundsPlayed;
+    private string $optionLetter;
+    private string $optionText;
+
+    private bool $isCorrect;
 
     /**
      * @param Uuid $gameId
      * @param Uuid $presenterToken
      * @param Uuid $publicToken
-     * @param string $questionTitle
-     * @param string $roundsPlayed
+     * @param string $option
+     * @param string $optionText
+     * @param bool $isCorrect
      */
-    public function __construct(Uuid $gameId, Uuid $presenterToken, Uuid $publicToken, string $questionTitle, string $roundsPlayed)
+    public function __construct(Uuid $gameId, Uuid $presenterToken, Uuid $publicToken, string $option, string $optionText, bool $isCorrect)
     {
         $this->gameId = $gameId;
         $this->presenterToken = $presenterToken;
         $this->publicToken = $publicToken;
-        $this->questionTitle = $questionTitle;
-        $this->roundsPlayed = $roundsPlayed;
+        $this->optionLetter = $option;
+        $this->optionText = $optionText;
+        $this->isCorrect = $isCorrect;
     }
 
     public function getGameId(): Uuid
@@ -58,23 +62,33 @@ class NextRoundEvent implements GameEventInterface
         $this->publicToken = $publicToken;
     }
 
-    public function getQuestionTitle(): string
+    public function getOptionLetter(): string
     {
-        return $this->questionTitle;
+        return $this->optionLetter;
     }
 
-    public function setQuestionTitle(string $questionTitle): void
+    public function setOptionLetter(string $optionLetter): void
     {
-        $this->questionTitle = $questionTitle;
+        $this->optionLetter = $optionLetter;
     }
 
-    public function getRoundsPlayed(): string
+    public function getOptionText(): string
     {
-        return $this->roundsPlayed;
+        return $this->optionText;
     }
 
-    public function setRoundsPlayed(string $roundsPlayed): void
+    public function setOptionText(string $optionText): void
     {
-        $this->roundsPlayed = $roundsPlayed;
+        $this->optionText = $optionText;
+    }
+
+    public function isCorrect(): bool
+    {
+        return $this->isCorrect;
+    }
+
+    public function setIsCorrect(bool $isCorrect): void
+    {
+        $this->isCorrect = $isCorrect;
     }
 }

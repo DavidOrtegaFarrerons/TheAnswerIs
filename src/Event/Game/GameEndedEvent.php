@@ -2,27 +2,53 @@
 
 namespace App\Event\Game;
 
-use App\Entity\Game;
+use Symfony\Component\Uid\Uuid;
 
-class GameEndedEvent
+class GameEndedEvent implements GameEventInterface
 {
-    private Game $game;
+    private Uuid $gameId;
+    private Uuid $presenterToken;
+    private Uuid $publicToken;
 
     /**
-     * @param Game $game
+     * @param Uuid $gameId
+     * @param Uuid $presenterToken
+     * @param Uuid $publicToken
      */
-    public function __construct(Game $game)
+    public function __construct(Uuid $gameId, Uuid $presenterToken, Uuid $publicToken)
     {
-        $this->game = $game;
+        $this->gameId = $gameId;
+        $this->presenterToken = $presenterToken;
+        $this->publicToken = $publicToken;
     }
 
-    public function getGame(): Game
+    public function getGameId(): Uuid
     {
-        return $this->game;
+        return $this->gameId;
     }
 
-    public function setGame(Game $game): void
+    public function setGameId(Uuid $gameId): void
     {
-        $this->game = $game;
+        $this->gameId = $gameId;
+    }
+
+    public function getPresenterToken(): Uuid
+    {
+        return $this->presenterToken;
+    }
+
+    public function setPresenterToken(Uuid $presenterToken): void
+    {
+        $this->presenterToken = $presenterToken;
+    }
+
+    public function getPublicToken(): Uuid
+    {
+        return $this->publicToken;
+    }
+
+    public function setPublicToken(Uuid $publicToken): void
+    {
+        $this->publicToken = $publicToken;
     }
 }

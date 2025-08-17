@@ -44,7 +44,14 @@ class UseJokerService
             $round->useJoker($joker);
         });
 
-        $this->dispatcher->dispatch(new JokerUsedEvent($game, $result));
+        $this->dispatcher->dispatch(
+            new JokerUsedEvent(
+                $game->getId(),
+                $game->getPresenterToken(),
+                $game->getPublicToken(),
+                $result
+            )
+        );
     }
 
     private function getStrategyFor(Joker $joker): JokerStrategyInterface

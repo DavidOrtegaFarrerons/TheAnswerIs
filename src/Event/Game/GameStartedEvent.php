@@ -3,23 +3,23 @@
 namespace App\Event\Game;
 
 use Symfony\Component\Uid\Uuid;
-use Symfony\Contracts\EventDispatcher\Event;
 
-class GameStartedEvent extends Event
+class GameStartedEvent implements GameEventInterface
 {
     private Uuid $gameId;
+    private Uuid $presenterToken;
     private Uuid $publicToken;
-    private \DateTimeImmutable $ocurredAt;
 
     /**
      * @param Uuid $gameId
+     * @param Uuid $presenterToken
      * @param Uuid $publicToken
      */
-    public function __construct(Uuid $gameId, Uuid $publicToken)
+    public function __construct(Uuid $gameId, Uuid $presenterToken, Uuid $publicToken)
     {
         $this->gameId = $gameId;
+        $this->presenterToken = $presenterToken;
         $this->publicToken = $publicToken;
-        $this->ocurredAt = new \DateTimeImmutable();
     }
 
     public function getGameId(): Uuid
@@ -32,6 +32,16 @@ class GameStartedEvent extends Event
         $this->gameId = $gameId;
     }
 
+    public function getPresenterToken(): Uuid
+    {
+        return $this->presenterToken;
+    }
+
+    public function setPresenterToken(Uuid $presenterToken): void
+    {
+        $this->presenterToken = $presenterToken;
+    }
+
     public function getPublicToken(): Uuid
     {
         return $this->publicToken;
@@ -40,15 +50,5 @@ class GameStartedEvent extends Event
     public function setPublicToken(Uuid $publicToken): void
     {
         $this->publicToken = $publicToken;
-    }
-
-    public function getOcurredAt(): \DateTimeImmutable
-    {
-        return $this->ocurredAt;
-    }
-
-    public function setOcurredAt(\DateTimeImmutable $ocurredAt): void
-    {
-        $this->ocurredAt = $ocurredAt;
     }
 }

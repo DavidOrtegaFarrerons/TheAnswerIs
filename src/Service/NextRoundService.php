@@ -27,7 +27,14 @@ readonly class NextRoundService
     {
         $roundsPlayed = $game->getRounds()->count();
         if ($game->getContest()->getTotalQuestions() <= $game->getRounds()->count()) {
-            $this->dispatcher->dispatch(new GameEndedEvent($game));
+            $this->dispatcher->dispatch(
+                new GameEndedEvent(
+                    $game->getId(),
+                    $game->getPresenterToken(),
+                    $game->getPublicToken()
+                )
+            );
+
             return;
         }
 
@@ -41,7 +48,9 @@ readonly class NextRoundService
 
         $this->dispatcher->dispatch(
             new NextRoundEvent(
-                $game,
+                $game->getId(),
+                $game->getPresenterToken(),
+                $game->getPublicToken(),
                 $round->getQuestion()->getTitle(),
                 $roundsPlayed
             )

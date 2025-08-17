@@ -151,7 +151,7 @@
             window.eventSource.close();
         }
 
-        window.eventSource = new EventSource('{{ mercure("/game/" ~ game.id ~ "/" ~ game.presenterToken) }}');
+        window.eventSource = new EventSource('{{ mercure(game_presenter_url(game.id, game.presenterToken)) }}');
 
         window.eventSource.onmessage = (event) => {
             const data = JSON.parse(event.data);
@@ -168,12 +168,12 @@
                 document.getElementById(`#${jk}`).classList.add('hidden');
             }
 
-            if (data.type === 'ANSWER_REVEALED') {
-                const key = data.payload.key;
-                const value = data.payload.text;
+            if (data.type === 'OPTION_REVEALED') {
+                const key = data.payload.optionLetter;
+                const value = data.payload.optionText;
                 const btn = answers[key];
                 if (!btn) return;
-                if (data.payload.correct) {
+                if (data.payload.isCorrect) {
                     correctAnswer = key;
                     let correctAnswerText = document.getElementById('correct-answer');
                     correctAnswerText.textContent = key + " | " + value;
@@ -183,9 +183,9 @@
                 if (Object.keys(revealed).length === 4 && correctAnswer) setButtonsEnabled(true);
             }
 
-            if (data.type === 'ANSWER_SUBMITTED') {
-                const option = data.payload.option;
-                const correct = data.payload.correct;
+            if (data.type === 'OPTION_SUBMITTED') {
+                const option = data.payload.optionLetter;
+                const correct = data.payload.isCorrect;
                 if (!answers[option]) return;
                 if (correct) {
                     answers[option].classList.add('!bg-green-700', '!text-white', '!border-green-900');
@@ -194,13 +194,6 @@
                 } else {
                     answers[option].classList.add('!bg-red-800', '!text-white', '!border-red-900');
                 }
-            }
-
-            if (data.type === 'CORRECT_ANSWER_REVEALED') {
-                const correctKey = data.payload.correct;
-                if (answers[correctKey]) answers[correctKey].classList.add('bg-green-700', 'text-white', 'border-green-900');
-                const btnContainer = document.getElementById('next-question-container');
-                if (btnContainer) btnContainer.classList.remove('hidden');
             }
 
             if (data.type === 'NEXT_ROUND') {

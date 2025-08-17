@@ -41,7 +41,13 @@ readonly class StartPresenterGameService
             $roundsPlayed--;
         }
 
-        $this->dispatcher->dispatch(new GameStartedEvent($game->getId(), $game->getPublicToken()));
+        $this->dispatcher->dispatch(
+            new GameStartedEvent(
+                $game->getId(),
+                $game->getPresenterToken(),
+                $game->getPublicToken()
+            )
+        );
 
         return new StartPresenterGameDto($game, $round, $roundsPlayed);
     }

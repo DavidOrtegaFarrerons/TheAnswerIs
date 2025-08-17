@@ -25,6 +25,15 @@ services:
         App\Service\Joker\JokerStrategyInterface:
             tags: ['app.joker.strategy']
 
+        App\Builder\GameEventPayloadBuilderInterface:
+            tags: ['app.game.event.payload.builder']
+
     App\Service\Joker\UseJokerService:
         arguments:
             $strategies: !tagged_iterator 'app.joker.strategy'
+
+    App\Publisher\GameRealtimePublisher:
+        arguments:
+            $builders: !tagged_iterator 'app.game.event.payload.builder'
+
+

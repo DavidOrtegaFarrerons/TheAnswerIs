@@ -4,27 +4,29 @@ namespace App\Event\Game;
 
 use Symfony\Component\Uid\Uuid;
 
-class JokerUsedEvent implements GameEventInterface
+class OptionSubmittedEvent implements GameEventInterface
 {
     private Uuid $gameId;
     private Uuid $presenterToken;
     private Uuid $publicToken;
-    private array $result;
+    private string $optionLetter;
+    private bool $isCorrect;
 
     /**
      * @param Uuid $gameId
      * @param Uuid $presenterToken
      * @param Uuid $publicToken
-     * @param array $result
+     * @param string $optionLetter
+     * @param bool $isCorrect
      */
-    public function __construct(Uuid $gameId, Uuid $presenterToken, Uuid $publicToken, array $result)
+    public function __construct(Uuid $gameId, Uuid $presenterToken, Uuid $publicToken, string $optionLetter, bool $isCorrect)
     {
         $this->gameId = $gameId;
         $this->presenterToken = $presenterToken;
         $this->publicToken = $publicToken;
-        $this->result = $result;
+        $this->optionLetter = $optionLetter;
+        $this->isCorrect = $isCorrect;
     }
-
 
     public function getGameId(): Uuid
     {
@@ -56,13 +58,23 @@ class JokerUsedEvent implements GameEventInterface
         $this->publicToken = $publicToken;
     }
 
-    public function getResult(): array
+    public function getOptionLetter(): string
     {
-        return $this->result;
+        return $this->optionLetter;
     }
 
-    public function setResult(array $result): void
+    public function setOptionLetter(string $optionLetter): void
     {
-        $this->result = $result;
+        $this->optionLetter = $optionLetter;
+    }
+
+    public function isCorrect(): bool
+    {
+        return $this->isCorrect;
+    }
+
+    public function setIsCorrect(bool $isCorrect): void
+    {
+        $this->isCorrect = $isCorrect;
     }
 }

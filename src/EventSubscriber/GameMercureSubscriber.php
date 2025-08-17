@@ -2,15 +2,15 @@
 
 namespace App\EventSubscriber;
 
-use App\Enum\MercureEventType;
-use App\Event\Game\AnswerRevealedEvent;
-use App\Event\Game\AnswerSelectedEvent;
-use App\Event\Game\AnswerSubmittedEvent;
+use App\Event\Game\OptionRevealedEvent;
+use App\Event\Game\OptionSelectedEvent;
+use App\Event\Game\OptionSubmittedEvent;
 use App\Event\Game\ContestantJoinedEvent;
 use App\Event\Game\GameEndedEvent;
 use App\Event\Game\GameStartedEvent;
 use App\Event\Game\JokerUsedEvent;
 use App\Event\Game\NextRoundEvent;
+use App\Publisher\GameRealtimePublisher;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Mercure\HubInterface;
 use Symfony\Component\Mercure\Update;
@@ -19,7 +19,10 @@ class GameMercureSubscriber implements EventSubscriberInterface
 {
 
 
-    public function __construct(private readonly HubInterface $hub)
+    public function __construct(
+        private readonly GameRealtimePublisher $publisher,
+        private readonly HubInterface $hub
+    )
     {
     }
 
@@ -32,14 +35,14 @@ class GameMercureSubscriber implements EventSubscriberInterface
             GameStartedEvent::class => [
                 ['onGameStarted', 0],
             ],
-            AnswerRevealedEvent::class => [
-                ['onAnswerRevealed', 0],
+            OptionRevealedEvent::class => [
+                ['onOptionRevealed', 0],
             ],
-            AnswerSelectedEvent::class => [
-                ['onAnswerSelected', 0],
+            OptionSelectedEvent::class => [
+                ['onOptionSelected', 0],
             ],
-            AnswerSubmittedEvent::class => [
-                ['onAnswerSubmitted', 0],
+            OptionSubmittedEvent::class => [
+                ['onOptionSubmitted', 0],
             ],
             GameEndedEvent::class => [
                 ['onGameEnded', 0],
@@ -68,99 +71,37 @@ class GameMercureSubscriber implements EventSubscriberInterface
 
     public function onGameStarted(GameStartedEvent $event): void
     {
-        $this->hub->publish(new Update(
-            "/game/{$event->getGameId()}/{$event->getPublicToken()}",
-            json_encode([
-                'type' => MercureEventType::GAME_STARTED,
-                'payload' => []
-            ])
-        ));
+        $this->publisher->publish($event, $event->getGameId(), $event->getPresenterToken(), $event->getPublicToken());
     }
 
-    public function onAnswerRevealed(AnswerRevealedEvent $event): void
+    public function onOptionRevealed(OptionRevealedEvent $event): void
     {
-        $payload = [
-            'type' => MercureEventType::ANSWER_REVEALED,
-            'payload' => [
-                'key' => $event->getOption(),
-                'text' => $event->getOptionText(),
-                'correct' => $event->isCorrect()
-            ]
-        ];
-
-        $this->hub->publish(new Update(
-            "/game/{$event->getGame()->getId()}/{$event->getGame()->getPresenterToken()}",
-            json_encode($payload)
-        ));
-    }
-
-    public function onAnswerSelected(AnswerSelectedEvent $event): void
-    {
-        $payload = [
-            'type' => MercureEventType::ANSWER_SELECTED,
-            'payload' => [
-                'key' => $event->getOption()
-            ]
-        ];
-
-        $this->hub->publish(new Update(
-            "/game/{$event->getGame()->getId()}/{$event->getGame()->getPresenterToken()}",
-            json_encode($payload)
-        ));
-    }
-
-    public function onAnswerSubmitted(AnswerSubmittedEvent $event): void
-    {
-        $payload = [
-            'type' => MercureEventType::ANSWER_SUBMITTED,
-            'payload' => [
-                'option' => $event->getOption(),
-                'correct' => $event->isCorrect(),
-            ]
-        ];
-
-        $this->hub->publish(new Update(
-            "/game/{$event->getGame()->getId()}/{$event->getGame()->getPresenterToken()}",
-            json_encode($payload)
-        ));
-    }
-
-    public function onGameEnded(GameEndedEvent $event): void
-    {
-        $this->hub->publish(new Update(
-            "/game/{$event->getGame()->getId()}/{$event->getGame()->getPresenterToken()}",
-            json_encode([
-                'type' => MercureEventType::END_OF_GAME,
-                'payload' => []
-            ])
-        ));
-    }
-
-    public function onNextRound(NextRoundEvent $event): void
-    {
-        $payload = [
-            'type' => MercureEventType::NEXT_ROUND,
-            'payload' => [
-                'questionText' => $event->getQuestionTitle(),
-                'roundsPlayed' => $event->getRoundsPlayed(),
-            ]
-        ];
-
-        $this->hub->publish(new Update(
-            "/game/{$event->getGame()->getId()}/{$event->getGame()->getPresenterToken()}",
-            json_encode($payload)
-        ));
+        $this->publisher->publish($event, $event->getGameId(), $event->getPresenterToken(), $event->getPublicToken());
     }
 
     public function onJokerUsed(JokerUsedEvent $event) : void
     {
-        $this->hub->publish(new Update(
-            "/game/{$event->getGame()->getId()}/{$event->getGame()->getPresenterToken()}",
-            json_encode([
-                'type'    => 'JOKER_USED',
-                'payload' => $event->getResult(),
-            ])
-        ));
+        $this->publisher->publish($event, $event->getGameId(), $event->getPresenterToken(), $event->getPublicToken());
+    }
+
+    public function onOptionSelected(OptionSelectedEvent $event): void
+    {
+        $this->publisher->publish($event, $event->getGameId(), $event->getPresenterToken(), $event->getPublicToken());
+    }
+
+    public function onOptionSubmitted(OptionSubmittedEvent $event): void
+    {
+        $this->publisher->publish($event, $event->getGameId(), $event->getPresenterToken(), $event->getPublicToken());
+    }
+
+    public function onNextRound(NextRoundEvent $event): void
+    {
+        $this->publisher->publish($event, $event->getGameId(), $event->getPresenterToken(), $event->getPublicToken());
+    }
+
+    public function onGameEnded(GameEndedEvent $event): void
+    {
+        $this->publisher->publish($event, $event->getGameId(), $event->getPresenterToken(), $event->getPublicToken());
     }
 }
 
