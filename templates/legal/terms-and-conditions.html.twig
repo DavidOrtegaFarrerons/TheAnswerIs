@@ -1,0 +1,101 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Términos y Condiciones{% endblock %}
+
+{% block body %}
+    <div class="min-h-screen bg-gradient-to-br from-purple-700 via-indigo-700 to-blue-700 text-white">
+        <header class="pt-10 pb-10 px-6">
+            <div class="max-w-4xl mx-auto text-center space-y-4">
+                <div class="text-6xl">📜</div>
+                <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight">Términos y Condiciones</h1>
+                <p class="text-white/80">Última actualización: {{ "now"|date("Y-m-d") }}</p>
+            </div>
+        </header>
+
+        <main class="px-6 pb-20">
+            <div class="max-w-3xl mx-auto rounded-3xl bg-neutral-900/80 backdrop-blur-sm p-8 md:p-10 shadow-2xl shadow-black/40 space-y-8">
+                <p class="text-white/90">
+                    Bienvenido/a a <strong>{{ app_name|default('Quizzes') }}</strong>. Al acceder o usar el servicio aceptas estos Términos y Condiciones.
+                    Si no estás de acuerdo, por favor no utilices la plataforma.
+                </p>
+
+                <section class="space-y-3">
+                    <h2 class="text-2xl font-bold">1. Definiciones</h2>
+                    <p><strong>“Concurso”</strong>: conjunto de preguntas/respuestas creado por un usuario.</p>
+                    <p><strong>“Público”</strong>: visible para otros usuarios o listado en catálogos/páginas públicas.</p>
+                    <p><strong>“Privado”</strong>: solo visible para su creador o quienes este comparta específicamente.</p>
+                </section>
+
+                <section class="space-y-3">
+                    <h2 class="text-2xl font-bold">2. Elegibilidad y cuenta</h2>
+                    <ul class="list-disc pl-6 space-y-2 text-white/90">
+                        <li>Debes proporcionar información veraz y mantener la seguridad de tus credenciales.</li>
+                        <li>Eres responsable de toda actividad realizada desde tu cuenta.</li>
+                    </ul>
+                </section>
+
+                <section class="space-y-3">
+                    <h2 class="text-2xl font-bold">3. Contenido y visibilidad</h2>
+                    <ul class="list-disc pl-6 space-y-2 text-white/90">
+                        <li><strong>Control del autor:</strong> <u>solo</u> los concursos que marques explícitamente como “Públicos” se harán públicos. Por defecto, los concursos son privados.</li>
+                        <li><strong>Concursos públicos:</strong> concedes a {{ app_name|default('Quizzes') }} una licencia no exclusiva y gratuita para alojar, mostrar y distribuir tu concurso dentro del servicio, con el único fin de operar y promocionar la funcionalidad del mismo. Tú conservas la titularidad de los derechos sobre tu contenido.</li>
+                        <li><strong>Concursos privados:</strong> no se listan públicamente ni son accesibles sin autorización del autor.</li>
+                        <li>No publiques contenido ilegal, ofensivo, que infrinja derechos de terceros o normativa vigente.</li>
+                    </ul>
+                </section>
+
+                <section class="space-y-3">
+                    <h2 class="text-2xl font-bold">4. Privacidad y datos</h2>
+                    <ul class="list-disc pl-6 space-y-2 text-white/90">
+                        <li><strong>No vendemos datos a terceros.</strong></li>
+                        <li>Tratamos datos personales para prestar el servicio (por ejemplo, autenticación, mantenimiento técnico y métricas básicas). Más detalles en la <a href="#" class="underline decoration-white/40 hover:text-yellow-300">Política de Privacidad</a>.</li>
+                        <li>Puedes ejercer tus derechos de acceso, rectificación, supresión y otros contactando a <a href="mailto:{{ privacy_email|default('privacy@quizzes.com') }}" class="underline decoration-white/40 hover:text-yellow-300">{{ privacy_email|default('privacy@example.com') }}</a>.</li>
+                    </ul>
+                </section>
+
+                <section class="space-y-3">
+                    <h2 class="text-2xl font-bold">5. Conducta prohibida</h2>
+                    <ul class="list-disc pl-6 space-y-2 text-white/90">
+                        <li>Eludir medidas de seguridad, realizar scraping masivo o ataques de disponibilidad.</li>
+                        <li>Publicar contenido que viole propiedad intelectual o derechos de terceros.</li>
+                        <li>Usar el servicio para spam, fraude o actividades ilícitas.</li>
+                    </ul>
+                </section>
+
+                <section class="space-y-3">
+                    <h2 class="text-2xl font-bold">6. Disponibilidad y cambios</h2>
+                    <p class="text-white/90">
+                        El servicio puede cambiar o interrumpirse total o parcialmente sin previo aviso. Podemos actualizar estos términos; si los cambios son materiales, procuraremos notificarlo por medios razonables.
+                    </p>
+                </section>
+
+                <section class="space-y-3">
+                    <h2 class="text-2xl font-bold">7. Responsabilidad</h2>
+                    <p class="text-white/90">
+                        El servicio se ofrece “tal cual”. En la medida permitida por ley, no asumimos garantías implícitas y no respondemos por daños indirectos o pérdida de datos derivada del uso del servicio.
+                    </p>
+                </section>
+
+                <section class="space-y-3">
+                    <h2 class="text-2xl font-bold">8. Propiedad intelectual</h2>
+                    <p class="text-white/90">
+                        {{ app_name|default('Quizzes') }} y sus logotipos son marcas/propiedad de sus respectivos titulares. Todo el software y elementos de la plataforma están protegidos por la normativa aplicable.
+                    </p>
+                </section>
+
+                <section class="space-y-3">
+                    <h2 class="text-2xl font-bold">9. Ley aplicable y jurisdicción</h2>
+                    <p class="text-white/90">
+                        Estos términos se rigen por la ley española. Cualquier disputa se someterá a los juzgados y tribunales de {{ legal_venue|default('Barcelona, España') }}, salvo norma imperativa distinta.
+                    </p>
+                </section>
+
+                <div class="pt-4">
+                    <a href="/" class="inline-flex items-center justify-center gap-2 rounded-full border border-white/30 px-6 py-3 font-semibold transition-all duration-150 hover:bg-white/10 active:scale-95">
+                        Volver al inicio
+                    </a>
+                </div>
+            </div>
+        </main>
+    </div>
+{% endblock %}
