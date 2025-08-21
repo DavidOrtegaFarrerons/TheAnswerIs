@@ -1,0 +1,112 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Registro • Quizzes{% endblock %}
+
+{% block body %}
+    <div class="min-h-screen bg-gradient-to-br from-purple-700 via-indigo-700 to-blue-700 flex items-center justify-center p-6">
+        <div class="w-full max-w-lg rounded-3xl bg-neutral-900/80 backdrop-blur-sm text-white px-8 py-10 shadow-2xl shadow-black/50">
+            <div class="text-center space-y-2 mb-8">
+                <div class="text-6xl">📝</div>
+                <h1 class="text-3xl font-extrabold tracking-tight">Crea tu cuenta</h1>
+                <p class="text-white/80 text-sm">Únete para jugar, crear y compartir tus quizzes.</p>
+            </div>
+
+            {% if form_errors(registerForm) %}
+                <div class="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm">
+                    {{ form_errors(registerForm) }}
+                </div>
+            {% endif %}
+
+            {{ form_start(registerForm, { attr: { class: 'space-y-6' } }) }}
+
+            <div class="space-y-2">
+                <label class="block text-sm font-medium text-white/90" for="{{ registerForm.displayName.vars.id }}">Nombre (público)</label>
+                <div class="relative">
+                    {{ form_widget(registerForm.displayName, {
+                        attr: {
+                            class: 'w-full rounded-2xl bg-neutral-800 border border-white/10 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-yellow-400',
+                            placeholder: 'tu@email.com',
+                            autocomplete: 'email'
+                        }
+                    }) }}
+                    {% if form_errors(registerForm.displayName) %}
+                        <div class="text-red-400 text-sm mt-1">
+                            {{ form_errors(registerForm.displayName) }}
+                        </div>
+                    {% endif %}
+                </div>
+                <p class="text-xs text-white/60">Este será tu nombre de autor de los concursos que publiques.</p>
+            </div>
+
+            <div class="space-y-2">
+                <label class="block text-sm font-medium text-white/90" for="{{ registerForm.email.vars.id }}">Email</label>
+                <div class="relative">
+                    {{ form_widget(registerForm.email, {
+                        attr: {
+                            class: 'w-full rounded-2xl bg-neutral-800 border border-white/10 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-yellow-400',
+                            placeholder: 'tu@email.com',
+                            autocomplete: 'email'
+                        }
+                    }) }}
+                    {% if form_errors(registerForm.email) %}
+                        <div class="text-red-400 text-sm mt-1">
+                            {{ form_errors(registerForm.email) }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <label class="block text-sm font-medium text-white/90" for="{{ registerForm.plainPassword.vars.id }}">Contraseña</label>
+                <div class="relative">
+                    {{ form_widget(registerForm.plainPassword, {
+                        attr: {
+                            class: 'w-full rounded-2xl bg-neutral-800 border border-white/10 px-4 py-3 pr-12 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-yellow-400',
+                            placeholder: '••••••••',
+                            autocomplete: 'new-password'
+                        }
+                    }) }}
+                    <button type="button" class="absolute inset-y-0 right-3 my-auto rounded-md px-2 text-white/70 hover:text-white/90"
+                            onclick="togglePassword('{{ registerForm.plainPassword.vars.id }}', this)">Ver</button>
+                </div>
+                {% if form_errors(registerForm.plainPassword) %}
+                    <div class="text-red-400 text-sm mt-1">
+                        {{ form_errors(registerForm.plainPassword) }}
+                    </div>
+                {% endif %}
+                <p class="text-xs text-white/60">Mínimo 8 caracteres. Usa mayúsculas, minúsculas y números.</p>
+            </div>
+
+            <div class="space-y-3">
+                <label class="inline-flex items-start gap-3 text-sm text-white/80">
+                    {{ form_widget(registerForm.agreeTerms, { attr: { class: 'mt-1 rounded-md' } }) }}
+                    <span>Acepto los <a class="underline decoration-white/40 hover:text-yellow-300" href="{{ path('legal')}}" target="_blank">términos y condiciones</a>.</span>
+                </label>
+                {{ form_errors(registerForm.agreeTerms) }}
+            </div>
+
+            {{ form_row(registerForm._token) }}
+
+            <button type="submit"
+                    class="w-full cursor-pointer inline-flex items-center justify-center gap-2 rounded-full bg-yellow-500 px-6 py-3 font-semibold text-neutral-900 transition-transform duration-150 hover:scale-105 hover:bg-yellow-400 active:scale-95">
+                Crear cuenta
+            </button>
+            {{ form_end(registerForm) }}
+
+            <div class="mt-6 text-center text-sm text-white/80">
+                ¿Ya tienes cuenta?
+                <a href="{{ path('app_login') }}" class="font-semibold text-yellow-400 hover:text-yellow-300">Inicia sesión</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword(id, btn) {
+            const input = document.getElementById(id);
+            if (!input) return;
+            const isText = input.type === 'text';
+            input.type = isText ? 'password' : 'text';
+            btn.textContent = isText ? 'Ver' : 'Ocultar';
+        }
+    </script>
+{% endblock %}
