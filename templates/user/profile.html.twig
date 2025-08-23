@@ -1,0 +1,173 @@
+{% extends 'base.html.twig' %}
+{% block title %}Tu perfil{% endblock %}
+
+{% block body %}
+    <div class="min-h-screen bg-gradient-to-br from-purple-700 via-indigo-700 to-blue-700 flex items-center justify-center p-6">
+        <div class="w-full max-w-4xl rounded-3xl bg-neutral-900/80 backdrop-blur-sm text-white px-8 py-10 shadow-2xl shadow-black/50">
+            <h1 class="text-3xl font-extrabold mb-4">Tu perfil</h1>
+            <p class="text-white/80">ID de usuario: <span class="font-mono">{{ user.id }}</span></p>
+            <p class="text-white/80 mt-2">Aquí añadiremos tus datos y acciones.</p>
+            <p class="text-white/80 mt-2">Concursos creados: {{ user.contests|length }}</p>
+
+            {# Flash #}
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    <div class="mt-4 rounded-xl border {{ label == 'danger' ? 'border-red-500/30 bg-red-500/10' : 'border-white/10 bg-white/10' }} px-4 py-3 text-sm">
+                        {{ message|raw }}
+                    </div>
+                {% endfor %}
+            {% endfor %}
+
+            <div class="mt-6 flex items-center justify-between gap-4">
+                <button type="button"
+                        class="cursor-pointer inline-flex items-center justify-center gap-2 rounded-full bg-yellow-500 px-6 py-3 font-semibold text-neutral-900 transition-transform duration-150 hover:scale-105 hover:bg-yellow-400 active:scale-95"
+                        onclick="openCreateContestModal()">
+                    Crear nuevo concurso
+                </button>
+            </div>
+
+            {# ===== Your Contests List ===== #}
+            <div class="mt-8">
+                <h2 class="text-2xl font-bold mb-3">Tus concursos</h2>
+
+                {% if user.contests|length == 0 %}
+                    <p class="text-white/70">Aún no has creado ningún concurso.</p>
+                {% else %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {% for c in user.contests %}
+                            <div class="rounded-2xl border border-white/10 bg-white/5 p-4 flex gap-4 items-center">
+                                <div class="w-20 h-20 rounded-xl overflow-hidden bg-white/5 flex items-center justify-center shrink-0">
+                                    {% if c.imageUrl %}
+                                        <img src="{{ c.imageUrl }}" alt="Portada" class="w-full h-full object-cover">
+                                    {% else %}
+                                        <div class="text-white/50 text-xs px-2 text-center">Sin imagen</div>
+                                    {% endif %}
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="font-semibold truncate">{{ c.name }}</h3>
+                                        {% set status = c.status is not same as(null) ? c.status.value : 'draft' %}
+                                        <span class="text-xs px-2 py-0.5 rounded-full
+                                            {{ status == 'published' ? 'bg-green-500/20 text-green-300' : 'bg-white/10 text-white/70' }}">
+                                            {{ status == 'published' ? 'Publicado' : 'Borrador' }}
+                                        </span>
+                                    </div>
+                                    <div class="mt-3 flex flex-wrap gap-2">
+                                        {# Play button only when published. For now link to /play/{id}; adjust when you add a route. #}
+                                        {% if status == 'published' %}
+                                            <a href="/play/{{ c.id }}"
+                                               class="inline-flex items-center justify-center rounded-full px-3 py-2 text-sm bg-green-500 text-neutral-900 font-semibold hover:bg-green-400">
+                                                Jugar
+                                            </a>
+                                        {% else %}
+                                            <button type="button" disabled
+                                                    class="inline-flex items-center justify-center rounded-full px-3 py-2 text-sm bg-white/10 text-white/50 cursor-not-allowed">
+                                                Jugar
+                                            </button>
+                                        {% endif %}
+
+                                        {# Edit: if published, ask to unpublish first #}
+                                        {% set editUrl = path('edit_contest', {'contest': c.id}) %}
+                                        {% if status == 'published' %}
+                                            <button type="button"
+                                                    class="inline-flex items-center justify-center rounded-full px-3 py-2 text-sm bg-yellow-500 text-neutral-900 font-semibold hover:bg-yellow-400"
+                                                    onclick="confirmUnpublishThenEdit('{{ path('unpublish_contest', {'contest': c.id}) }}', '{{ editUrl }}')">
+                                                Editar
+                                            </button>
+                                        {% else %}
+                                            <a href="{{ editUrl }}"
+                                               class="inline-flex items-center justify-center rounded-full px-3 py-2 text-sm bg-yellow-500 text-neutral-900 font-semibold hover:bg-yellow-400">
+                                                Editar
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# ===== Create Contest Modal ===== #}
+    <div id="create-contest-modal" class="fixed inset-0 hidden items-center justify-center bg-black/50 z-50">
+        <div class="w-full max-w-md rounded-2xl bg-neutral-900 p-6 text-white shadow-2xl">
+            <h2 class="text-xl font-bold mb-4">Nuevo concurso</h2>
+            <form action="{{ path('create_contest') }}" method="POST" class="space-y-4">
+                <input type="hidden" name="_token" value="{{ csrf_token('create_contest') }}">
+
+                <div>
+                    <label for="contest-name" class="block text-sm mb-2">Nombre del concurso</label>
+                    <input id="contest-name" name="name" type="text" required
+                           class="w-full rounded-2xl bg-neutral-800 border border-white/10 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                           placeholder="Ej. Historia de Europa">
+                </div>
+
+                <div>
+                    <label for="contest-image-url" class="block text-sm mb-2">URL de la imagen (opcional)</label>
+                    <input id="contest-image-url" name="imageUrl" type="url"
+                           class="w-full rounded-2xl bg-neutral-800 border border-white/10 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                           placeholder="https://...">
+                </div>
+
+                <div>
+                    <span class="block text-sm mb-2">Visibilidad</span>
+                    <div class="flex gap-3">
+                        <label class="inline-flex items-center gap-2">
+                            <input type="radio" name="visibility" value="public" class="accent-yellow-400" checked>
+                            <span>Pública</span>
+                        </label>
+                        <label class="inline-flex items-center gap-2">
+                            <input type="radio" name="visibility" value="private" class="accent-yellow-400">
+                            <span>Privada</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 justify-end pt-2">
+                    <button type="button"
+                            class="rounded-full px-4 py-2 bg-white/10 hover:bg-white/20"
+                            onclick="closeCreateContestModal()">Cancelar</button>
+                    <button type="submit"
+                            class="rounded-full px-4 py-2 bg-yellow-500 text-neutral-900 font-semibold hover:bg-yellow-400">
+                        Crear y editar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openCreateContestModal(){
+            const m = document.getElementById('create-contest-modal');
+            m.classList.remove('hidden'); m.classList.add('flex');
+            setTimeout(()=> document.getElementById('contest-name')?.focus(), 0);
+        }
+        function closeCreateContestModal(){
+            const m = document.getElementById('create-contest-modal');
+            m.classList.remove('flex'); m.classList.add('hidden');
+        }
+        window.addEventListener('keydown', (e)=> {
+            if (e.key === 'Escape') closeCreateContestModal();
+        });
+
+        async function confirmUnpublishThenEdit(unpublishUrl, editUrl) {
+            const ok = confirm('Para editar el concurso debes despublicarlo. ¿Quieres despublicarlo ahora?');
+            if (!ok) return;
+
+            try {
+                const res = await fetch(unpublishUrl, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                if (!res.ok) {
+                    const body = await res.json().catch(()=>({message:'Error al despublicar'}));
+                    alert(body.message ?? 'Error al despublicar');
+                    return;
+                }
+                // Go to editor after successful unpublish
+                window.location.href = editUrl;
+            } catch (e) {
+                alert('No se pudo despublicar. Reintenta más tarde.');
+            }
+        }
+    </script>
+{% endblock %}

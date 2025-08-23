@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Controller;
+namespace App\Controller\Game;
 
 use App\Dto\CreateGameDto;
 use App\Service\CreateGameService;

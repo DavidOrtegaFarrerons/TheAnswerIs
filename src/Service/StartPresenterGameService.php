@@ -4,10 +4,8 @@ namespace App\Service;
 
 use App\Dto\StartPresenterGameDto;
 use App\Entity\Game;
-use App\Enum\Difficulty;
 use App\Event\Game\GameStartedEvent;
-use App\Factory\RoundFactory;
-use App\Repository\QuestionRepository;
+use App\Factory\Entity\RoundFactory;
 use App\Repository\RoundRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
