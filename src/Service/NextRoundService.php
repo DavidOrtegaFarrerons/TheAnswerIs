@@ -5,7 +5,7 @@ namespace App\Service;
 use App\Entity\Game;
 use App\Event\Game\GameEndedEvent;
 use App\Event\Game\NextRoundEvent;
-use App\Factory\RoundFactory;
+use App\Factory\Entity\RoundFactory;
 use App\Repository\RoundRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;

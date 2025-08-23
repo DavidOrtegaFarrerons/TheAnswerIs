@@ -5,7 +5,7 @@ namespace App\Service;
 use App\Dto\CreateGameDto;
 use App\Entity\Game;
 use App\Exception\ContestNotFoundException;
-use App\Factory\GameFactory;
+use App\Factory\Entity\GameFactory;
 use App\Repository\ContestRepository;
 use App\Repository\GameRepository;
 use Doctrine\ORM\EntityManagerInterface;

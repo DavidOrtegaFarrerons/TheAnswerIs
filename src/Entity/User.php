@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -38,9 +40,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private ?string $password = null;
 
+    /**
+     * @var Collection<int, Contest>
+     */
+    #[ORM\OneToMany(targetEntity: Contest::class, mappedBy: 'createdBy')]
+    private Collection $contests;
+
     public function __construct()
     {
         $this->id = Uuid::v4();
+        $this->contests = new ArrayCollection();
     }
 
 
@@ -133,5 +142,35 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function eraseCredentials(): void
     {
         // @deprecated, to be removed when upgrading to Symfony 8
+    }
+
+    /**
+     * @return Collection<int, Contest>
+     */
+    public function getContests(): Collection
+    {
+        return $this->contests;
+    }
+
+    public function addContest(Contest $contest): static
+    {
+        if (!$this->contests->contains($contest)) {
+            $this->contests->add($contest);
+            $contest->setCreatedBy($this);
+        }
+
+        return $this;
+    }
+
+    public function removeContest(Contest $contest): static
+    {
+        if ($this->contests->removeElement($contest)) {
+            // set the owning side to null (unless already changed)
+            if ($contest->getCreatedBy() === $this) {
+                $contest->setCreatedBy(null);
+            }
+        }
+
+        return $this;
     }
 }

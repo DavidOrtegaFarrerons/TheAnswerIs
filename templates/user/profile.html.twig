@@ -1,0 +1,70 @@
+{% extends 'base.html.twig' %}
+{% block title %}Tu perfil{% endblock %}
+
+{% block body %}
+    <div class="min-h-screen bg-gradient-to-br from-purple-700 via-indigo-700 to-blue-700 flex items-center justify-center p-6">
+        <div class="w-full max-w-2xl rounded-3xl bg-neutral-900/80 backdrop-blur-sm text-white px-8 py-10 shadow-2xl shadow-black/50">
+            <h1 class="text-3xl font-extrabold mb-4">Tu perfil</h1>
+            <p class="text-white/80">ID de usuario: <span class="font-mono">{{ user.id }}</span></p>
+            <p class="text-white/80 mt-2">Aquí añadiremos tus datos y acciones.</p>
+            <p class="text-white/80 mt-2">Concursos creados: {{ user.contests|length }}</p>
+
+            {# Flash #}
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    <div class="mt-4 rounded-xl border {{ label == 'danger' ? 'border-red-500/30 bg-red-500/10' : 'border-white/10 bg-white/10' }} px-4 py-3 text-sm">
+                        {{ message|raw }}
+                    </div>
+                {% endfor %}
+            {% endfor %}
+
+            <div class="mt-6">
+                <button type="button"
+                        class="cursor-pointer inline-flex items-center justify-center gap-2 rounded-full bg-yellow-500 px-6 py-3 font-semibold text-neutral-900 transition-transform duration-150 hover:scale-105 hover:bg-yellow-400 active:scale-95"
+                        onclick="openCreateContestModal()">
+                    Crear nuevo concurso
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {# Modal #}
+    <div id="create-contest-modal" class="fixed inset-0 hidden items-center justify-center bg-black/50 z-50">
+        <div class="w-full max-w-md rounded-2xl bg-neutral-900 p-6 text-white shadow-2xl">
+            <h2 class="text-xl font-bold mb-4">Nuevo concurso</h2>
+            <form action="{{ path('create_contest') }}" method="POST" class="space-y-4">
+                <input type="hidden" name="_token" value="{{ csrf_token('create_contest') }}">
+                <div>
+                    <label for="contest-name" class="block text-sm mb-2">Nombre del concurso</label>
+                    <input id="contest-name" name="name" type="text" required
+                           class="w-full rounded-2xl bg-neutral-800 border border-white/10 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                           placeholder="Ej. Historia de Europa">
+                </div>
+                <div class="flex gap-3 justify-end pt-2">
+                    <button type="button"
+                            class="rounded-full px-4 py-2 bg-white/10 hover:bg-white/20"
+                            onclick="closeCreateContestModal()">Cancelar</button>
+                    <button type="submit"
+                            class="rounded-full px-4 py-2 bg-yellow-500 text-neutral-900 font-semibold hover:bg-yellow-400">
+                        Crear y editar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openCreateContestModal(){
+            const m = document.getElementById('create-contest-modal');
+            m.classList.remove('hidden'); m.classList.add('flex');
+            setTimeout(()=> document.getElementById('contest-name')?.focus(), 0);
+        }
+        function closeCreateContestModal(){
+            const m = document.getElementById('create-contest-modal');
+            m.classList.remove('flex'); m.classList.add('hidden');
+        }
+        window.addEventListener('keydown', (e)=> {
+            if (e.key === 'Escape') closeCreateContestModal();
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,541 @@
+{# templates/contest/editor.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Crear concurso{% endblock %}
+
+{% block body %}
+    <div class="h-screen bg-gradient-to-br from-purple-700 via-indigo-700 to-blue-700 text-white">
+        <div
+            id="contest-editor"
+            class="h-full grid grid-cols-1 md:grid-cols-[320px_1fr]"
+            data-contest-id="{{ contest.id }}"
+            data-question-id="{{ currentQuestion.id|default('') }}"
+            data-csrf="{{ csrf_token('contest_edit') }}"
+        >
+            {# ============ LEFT RAIL (QUESTIONS) ============ #}
+            <aside class="h-full flex flex-col bg-neutral-900/80 backdrop-blur-md shadow-2xl shadow-black/50">
+                <div class="px-4 pt-4 pb-2">
+                    <h2 class="text-xl font-bold">Preguntas</h2>
+                    <p class="text-sm text-white/60">{{ questions|length }} total</p>
+                </div>
+                <div class="mt-2 text-sm text-white/70 space-y-1 px-4 pt-4 pb-2 mb-5" id="difficulty-counts">
+                    <p><span class="text-white font-semibold" data-count="easy">0</span> fáciles</p>
+                    <p><span class="text-white font-semibold" data-count="medium">0</span> medias</p>
+                    <p><span class="text-white font-semibold" data-count="hard">0</span> difíciles</p>
+                </div>
+
+                <div id="question-list" class="flex-1 overflow-y-auto px-4 space-y-2 pb-4">
+                    {% for q in questions %}
+                        <div class="relative group">
+                            <button
+                                type="button"
+                                class="w-full h-12 rounded-xl border-2 text-left px-3 transition-all duration-150 pr-10
+            {{ q.id == currentQuestion.id ? 'border-yellow-400 bg-yellow-400/10 ring-2 ring-yellow-300' : 'border-blue-600 bg-neutral-800/70 hover:bg-blue-600/30' }}"
+                                onclick="EditorUI.selectQuestion('{{ q.id }}')"
+                                title="{{ q.title|default('Sin título') }}"
+                            >
+                                <span class="text-sm font-semibold">Pregunta {{ loop.index }}</span>
+                                <span class="block text-xs text-white/70 truncate">{{ q.title|default('Sin título') }}</span>
+                            </button>
+
+                            <!-- Trash Button (visible on hover) -->
+                            <button
+                                type="button"
+                                onclick="EditorUI.deleteQuestion('{{ q.id }}')"
+                                title="Eliminar pregunta"
+                                class="absolute top-1 right-1 h-8 w-8 flex items-center justify-center text-white/50 hover:text-red-500 hover:bg-red-500/10 rounded-full transition opacity-0 group-hover:opacity-100"
+                            >
+                                🗑️
+                            </button>
+                        </div>
+                    {% endfor %}
+
+                    <button
+                        type="button"
+                        class="w-full h-12 rounded-xl border-2 border-dashed border-white/30 hover:border-yellow-400 hover:bg-white/10 transition-all duration-150"
+                        onclick="EditorUI.addQuestion()"
+                        title="Añadir nueva pregunta"
+                    >
+                        <span class="text-sm font-semibold">+ Nueva pregunta</span>
+                    </button>
+                </div>
+
+                <div id="save-area" class="px-4 pt-3 pb-4 border-t border-white/10">
+                    <button id="save-button"
+                            type="button"
+                            class="w-full cursor-pointer inline-flex items-center justify-center gap-2 rounded-full bg-yellow-500 px-4 py-2 font-semibold text-neutral-900 transition hover:bg-yellow-400 disabled:opacity-40 disabled:cursor-not-allowed"
+                            onclick="EditorUI.manualSave()"
+                            disabled>
+                        Guardar cambios
+                    </button>
+                    <p id="save-msg" class="text-xs text-white/70 mt-2 hidden">
+                        All your changes have been saved
+                    </p>
+                </div>
+
+                {# helper so we can toggle easily #}
+                {% set isPublished = contest.status is defined and contest.status.value == 'published' %}
+
+                <div id="pub-actions" class="px-4 pt-3 pb-4 border-t border-white/10 space-y-2">
+                    {# PUBLISH #}
+                    <form id="publish-form"
+                          action="{{ path('publish_contest', { contest: contest.id }) }}"
+                          method="POST"
+                          class="{{ isPublished ? 'hidden' : '' }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('publish_contest' ~ contest.id) }}">
+                        <button id="publish-button" type="submit"
+                                class="w-full cursor-pointer inline-flex items-center justify-center gap-2 rounded-full bg-green-500 px-4 py-2 font-semibold text-neutral-900 transition hover:bg-green-400 disabled:opacity-40 disabled:cursor-not-allowed">
+                            Publicar concurso
+                        </button>
+                    </form>
+
+                    {# UNPUBLISH #}
+                    <form id="unpublish-form"
+                          action="{{ path('unpublish_contest', { contest: contest.id }) }}"
+                          method="POST"
+                          class="{{ isPublished ? '' : 'hidden' }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('unpublish_contest' ~ contest.id) }}">
+                        <button id="unpublish-button" type="submit"
+                                class="w-full cursor-pointer inline-flex items-center justify-center gap-2 rounded-full bg-red-500 px-4 py-2 font-semibold text-neutral-900 transition hover:bg-red-400 disabled:opacity-40 disabled:cursor-not-allowed">
+                            Despublicar
+                        </button>
+                    </form>
+                </div>
+            </aside>
+
+            {# ============ MAIN EDITOR (CONTEST LOOK) ============ #}
+            <main class="h-full flex items-center justify-center p-6">
+                <div class="w-full max-w-3xl space-y-6">
+                    <header class="flex items-start justify-between">
+                        <div>
+                            <h1 class="text-2xl font-extrabold">Editor de concurso</h1>
+                            <p class="text-white/70 text-sm">Se guarda automáticamente al perder el foco de cada campo.</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <!-- Rules Button -->
+                            <button
+                                onclick="document.getElementById('rules-modal').classList.remove('hidden')"
+                                class="flex items-center gap-2 px-3 py-1 text-sm font-semibold rounded-full border border-white/20 hover:bg-white/10 transition"
+                                title="Ver reglas del concurso"
+                            >
+                                📘 <span class="hidden sm:inline">Reglas</span>
+                            </button>
+                        <div id="status-chip" class="rounded-full border border-white/20 px-3 py-1 text-xs text-white/80">
+                            Estado: <span class="font-semibold" data-status>Guardado</span>
+                        </div>
+                    </header>
+
+                    {# Question title styled like play view question box #}
+                    <section>
+                        <label class="block text-sm font-medium text-white/90 mb-2" for="q-title">Enunciado</label>
+                        <div class="rounded-2xl border-4 border-blue-600 bg-neutral-800/90 p-4">
+            <textarea id="q-title"
+                      data-field="title"
+                      class="w-full  resize-none bg-transparent text-white text-xl font-semibold min-h-[4rem] focus:outline-none"
+                      placeholder="Escribe el enunciado…"
+                      onblur="EditorUI.autoSave(this)">{{ currentQuestion.title|default('') }}</textarea>
+                        </div>
+                        <p class="mt-1 text-xs text-red-400 hidden" data-error-for="title"></p>
+                    </section>
+
+                    {# Options A–D styled like answer buttons #}
+                    <section class="grid grid-cols-1 sm:grid-cols-2 gap-6" id="answer-editor">
+                        {% for key in ['A','B','C','D'] %}
+                            <div class="rounded-xl border-2 border-blue-600 bg-neutral-800/80 px-5 py-4">
+                                <label for="opt-{{ key }}" class="sr-only">Opción {{ key|upper }}</label>
+                                <div class="flex items-center gap-3">
+                                    <span class="font-bold">{{ key|upper }}.</span>
+                                    <input id="opt-{{ key }}"
+                                           type="text"
+                                           data-field="option{{ key }}"
+                                           value="{{ attribute(currentQuestion, 'option'~key)|default('') }}"
+                                           class="flex-1 bg-transparent text-white placeholder-white/40 focus:outline-none"
+                                           placeholder="Texto de la opción {{ key|upper }}"
+                                           onblur="EditorUI.autoSave(this)">
+                                </div>
+                                <p class="mt-2 text-xs text-red-400 hidden" data-error-for="option_{{ key }}"></p>
+                            </div>
+                        {% endfor %}
+                    </section>
+
+                    {# Correct answer selector (only) #}
+                    <div class="flex flex-wrap -mx-2">
+                        <section class="w-full md:w-1/2 px-2">
+                            <label for="correctAnswer" class="block text-sm font-medium text-white/90 mb-2">Respuesta correcta</label>
+                            <select id="correctAnswer" data-field="correctAnswer"
+                                    class="w-full rounded-2xl bg-neutral-800 border border-white/10 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                                    onblur="EditorUI.autoSave(this)">
+                                {% set corr = currentQuestion.correctAnswer|default('') %}
+                                <option value="" {{ corr == '' ? 'selected' : '' }}>Selecciona…</option>
+                                <option value="a" {{ corr == 'a' ? 'selected' : '' }}>A</option>
+                                <option value="b" {{ corr == 'b' ? 'selected' : '' }}>B</option>
+                                <option value="c" {{ corr == 'c' ? 'selected' : '' }}>C</option>
+                                <option value="d" {{ corr == 'd' ? 'selected' : '' }}>D</option>
+                            </select>
+                            <p class="mt-1 text-xs text-red-400 hidden" data-error-for="correctAnswer"></p>
+                        </section>
+
+                        <div id="difficulty-area" class="w-full md:w-1/2 px-2 pb-4">
+                            <label for="difficulty-select" class="block text-sm font-medium text-white/90 mb-2">
+                                Dificultad
+                            </label>
+                            <select id="difficulty-select" data-field="difficulty"
+                                    class="w-full rounded-2xl bg-neutral-800 border border-white/10 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                                    onchange="EditorUI.autoSave(this)">
+                                <option value="">-- Selecciona dificultad --</option>
+                                <option value="easy">Fácil</option>
+                                <option value="medium">Media</option>
+                                <option value="hard">Difícil</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div id="error-modal"
+                     class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                    <div class="bg-neutral-900 text-white rounded-xl p-6 max-w-md w-full shadow-2xl">
+                        <h2 class="text-lg font-bold mb-2">Ha ocurrido el siguiente error:</h2>
+                        <p id="error-modal-msg" class="text-md "></p>
+                        <div class="text-right mt-4">
+                            <button onclick="document.getElementById('error-modal').classList.add('hidden')"
+                                    class="px-4 py-2 rounded bg-yellow-400 text-neutral-900 font-semibold hover:bg-yellow-300">
+                                Cerrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        function togglePublishUI(isNowPublished) {
+            const publishForm = document.getElementById('publish-form');
+            const unpublishForm = document.getElementById('unpublish-form');
+            const publishBtn = document.getElementById('publish-button');
+            const unpublishBtn = document.getElementById('unpublish-button');
+
+            if (isNowPublished) {
+                // show unpublish, hide publish
+                publishForm?.classList.add('hidden');
+                unpublishForm?.classList.remove('hidden');
+
+                if (publishBtn) publishBtn.disabled = false;   // reset for next time
+                if (unpublishBtn) unpublishBtn.disabled = false; // ensure it's clickable now
+            } else {
+                // show publish, hide unpublish
+                unpublishForm?.classList.add('hidden');
+                publishForm?.classList.remove('hidden');
+
+                if (publishBtn) publishBtn.disabled = false;   // ensure it's clickable now
+                if (unpublishBtn) unpublishBtn.disabled = false; // reset for next time
+            }
+
+            const chip = document.querySelector('#status-chip [data-status]');
+            if (chip) chip.textContent = isNowPublished ? 'Publicado' : 'Borrador';
+        }
+
+
+        function isPublishedFromPayload(data) {
+            // Support several shapes to be robust
+            if (!data || typeof data !== 'object') return null;
+
+            // 1) status string
+            if (typeof data.status === 'string') {
+                const s = data.status.toLowerCase();
+                if (s === 'published') return true;
+                if (s === 'draft' || s === 'unpublished') return false;
+            }
+
+            // 2) boolean flags
+            if (typeof data.published === 'boolean') return data.published;
+            if (typeof data.isPublished === 'boolean') return data.isPublished;
+
+            // 3) nested object { contest: { status: 'published' } }
+            const nested = data.contest?.status ?? data.contest?.state;
+            if (typeof nested === 'string') {
+                const s = nested.toLowerCase();
+                if (s === 'published') return true;
+                if (s === 'draft' || s === 'unpublished') return false;
+            }
+
+            return null; // unknown shape
+        }
+
+        async function handlePubAction(e) {
+            e.preventDefault();
+            const form = e.currentTarget;
+            const btn  = form.querySelector('button');
+            btn.disabled = true;
+
+            try {
+                const res  = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+                const data = await res.json().catch(() => ({}));
+
+                if (!res.ok) {
+                    showErrorModal(data.message || 'Operación no válida');
+                    btn.disabled = false;
+                    return;
+                }
+
+                const isNowPublished = isPublishedFromPayload(data);
+                if (isNowPublished === null) {
+                    // Fallback if the backend didn't send a recognizable shape
+                    console.warn('Respuesta sin estado de publicación reconocible:', data);
+                    alert('Operación realizada, pero no se pudo determinar el nuevo estado.');
+                    btn.disabled = false;
+                    return;
+                }
+
+                togglePublishUI(isNowPublished);
+            } catch (err) {
+                alert('Error de red.');
+                btn.disabled = false;
+            }
+        }
+
+        function showErrorModal(message) {
+            document.getElementById('error-modal-msg').textContent = message;
+            document.getElementById('error-modal').classList.remove('hidden');
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('publish-form')?.addEventListener('submit', handlePubAction);
+            document.getElementById('unpublish-form')?.addEventListener('submit', handlePubAction);
+        });
+    </script>
+
+
+
+    <script>
+        /** Same controller as before, trimmed to fields you kept (no points/time). */
+        const EditorUI = (() => {
+            const root = document.getElementById('contest-editor');
+            const statusEl = document.querySelector('[data-status]');
+            const saveBtn = document.getElementById('save-button');
+            const saveMsg = document.getElementById('save-msg');
+
+            let failedSaves = 0;
+            let saving = 0;
+
+            function setStatus(text){ if(statusEl) statusEl.textContent = text; }
+            function setSaveControls(){
+                if (failedSaves > 0){ saveBtn.disabled = false; saveMsg.classList.add('hidden'); }
+                else if (saving === 0){ saveBtn.disabled = true; saveMsg.classList.remove('hidden'); }
+            }
+            function contestId(){ return root?.dataset.contestId; }
+            function questionId(){ return root?.dataset.questionId; }
+            function csrf(){ return root?.dataset.csrf; }
+            function fieldErrorEl(field){ return document.querySelector(`[data-error-for="${field}"]`); }
+
+            async function autoSave(inputEl){
+                const cid = contestId(), qid = questionId(); if(!cid || !qid) return;
+                const field = inputEl.dataset.field, value = inputEl.value;
+
+                saving++; setStatus('guardando…'); saveBtn.disabled = true; saveMsg.classList.add('hidden');
+
+                try{
+                    const res = await fetch(`/api/contests/${encodeURIComponent(cid)}/questions/${encodeURIComponent(qid)}`,{
+                        method:'PATCH',
+                        headers:{ 'Content-Type':'application/json','X-CSRF-TOKEN': csrf() },
+                        body: JSON.stringify({ field, value })
+                    });
+                    const data = await res.json().catch(()=> ({}));
+                    if(!res.ok){
+                        failedSaves++;
+                        const el = fieldErrorEl(field); if(el){ el.textContent = data?.message || 'No se pudo guardar este campo.'; el.classList.remove('hidden'); }
+                    }else{
+                        const el = fieldErrorEl(field); if(el){ el.textContent=''; el.classList.add('hidden'); }
+                        if (data && typeof data.value !== 'undefined') inputEl.value = data.value;
+                    }
+                }catch(e){
+                    failedSaves++;
+                    const el = fieldErrorEl(field); if(el){ el.textContent='Error de red. Intenta de nuevo.'; el.classList.remove('hidden'); }
+                }finally{
+                    saving = Math.max(0, saving-1);
+                    setStatus(saving===0 ? 'Guardado' : 'guardando…');
+                    setSaveControls();
+                }
+            }
+
+            async function deleteQuestion(questionId) {
+                const cid = contestId(); if(!cid) return;
+                if (!cid || !questionId) return;
+
+                const confirmed = confirm('¿Seguro que quieres eliminar esta pregunta? Esta acción no se puede deshacer.');
+                if (!confirmed) return;
+
+                try {
+                    const res = await fetch(`/api/contests/${cid}/questions/${questionId}`, {
+                        method: 'DELETE',
+                        headers: { 'X-CSRF-TOKEN': csrf() }
+                    });
+
+                    if (!res.ok) {
+                        showErrorModal(data.message || 'Operación no válida');
+                        return;
+                    }
+
+                    // Reload the page or fetch the list again
+                    location.reload(); // simplest option
+                } catch (e) {
+                    alert('Error de red al eliminar.');
+                }
+            }
+
+            function clearFieldErrors(){
+                document.querySelectorAll('[data-error-for]').forEach(el => { el.textContent=''; el.classList.add('hidden'); });
+            }
+
+            function serializeForm(){
+                return {
+                    title: document.querySelector('[data-field="title"]')?.value || '',
+                    optionA: document.querySelector('[data-field="optionA"]')?.value || '',
+                    optionB: document.querySelector('[data-field="optionB"]')?.value || '',
+                    optionC: document.querySelector('[data-field="optionC"]')?.value || '',
+                    optionD: document.querySelector('[data-field="optionD"]')?.value || '',
+                    correctAnswer: document.querySelector('[data-field="correctAnswer"]')?.value || '',
+                    difficulty: document.querySelector('[data-field="difficulty"]')?.value || ''
+                };
+            }
+
+            async function manualSave(){
+                const cid = contestId(), qid = questionId(); if(!cid || !qid) return;
+                const payload = serializeForm();
+                saving++; setStatus('guardando…'); saveBtn.disabled = true;
+
+                try{
+                    const res = await fetch(`/api/contests/${encodeURIComponent(cid)}/questions/${encodeURIComponent(qid)}`,{
+                        method:'PUT',
+                        headers:{ 'Content-Type':'application/json','X-CSRF-TOKEN': csrf() },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await res.json().catch(()=> ({}));
+                    if(!res.ok){ failedSaves = 1; setStatus(data?.message || 'Errores al guardar.'); }
+                    else { failedSaves = 0; clearFieldErrors(); setStatus('Guardado'); }
+                }catch(e){ failedSaves = 1; setStatus('Error de red.'); }
+                finally{ saving = Math.max(0, saving-1); setSaveControls(); }
+            }
+
+            async function selectQuestion(newQid){
+                const cid = contestId(); if(!cid) return;
+                try{
+                    setStatus('cargando…');
+                    const res = await fetch(`/api/contests/${encodeURIComponent(cid)}/questions/${encodeURIComponent(newQid)}`,
+                        { headers:{ 'Accept':'application/json' }});
+                    const q = await res.json();
+
+                    const map = {
+                        title: q.title ?? '',
+                        optionA: q.optionA ?? '',
+                        optionB: q.optionB ?? '',
+                        optionC: q.optionC ?? '',
+                        optionD: q.optionD ?? '',
+                        correctAnswer:  q.correctAnswer ?? '',
+                        difficulty: q.difficulty ?? ''
+                    };
+                    for (const [k,v] of Object.entries(map)){
+                        const el = document.querySelector(`[data-field="${k}"]`);
+                        if(!el) continue;
+                        if(el.tagName==='SELECT') el.value = v; else el.value = v;
+                    }
+
+                    // Update highlight in rail (simple reset + best-effort)
+                    document.querySelectorAll('#question-list > button').forEach(btn=>{
+                        btn.classList.remove('border-yellow-400','bg-yellow-400/10','ring-2','ring-yellow-300');
+                        if (btn.getAttribute('onclick')?.includes(newQid)) {
+                            btn.classList.add('border-yellow-400','bg-yellow-400/10','ring-2','ring-yellow-300');
+                        }
+                    });
+
+                    root.dataset.questionId = String(newQid);
+                    failedSaves = 0; clearFieldErrors(); setStatus('Guardado'); setSaveControls();
+                }catch(e){ setStatus('No se pudo cargar la pregunta.'); }
+            }
+
+            async function addQuestion(){
+                const cid = contestId(); if(!cid) return;
+                setStatus('creando…');
+                try{
+                    const res = await fetch(`/api/contests/${encodeURIComponent(cid)}/questions`,{
+                        method:'POST',
+                        headers:{ 'Content-Type':'application/json','X-CSRF-TOKEN': csrf() },
+                        body: JSON.stringify({})
+                    });
+                    const q = await res.json();
+                    if(!res.ok) throw new Error(q?.message || 'No se pudo crear');
+
+                    const list = document.getElementById('question-list');
+                    const btn = document.createElement('button');
+                    btn.type='button';
+                    btn.className='w-full h-12 rounded-xl border-2 text-left px-3 transition-all duration-150 border-yellow-400 bg-yellow-400/10 ring-2 ring-yellow-300';
+                    btn.onclick = () => EditorUI.selectQuestion(q.id);
+                    btn.title='Sin título';
+                    const idx = list.querySelectorAll('button').length; // after existing + nueva
+                    btn.innerHTML = `<span class="text-sm font-semibold">Pregunta ${idx}</span><span class="block text-xs text-white/70 truncate">Sin título</span>`;
+                    list.insertBefore(btn, list.lastElementChild);
+
+                    await selectQuestion(q.id);
+                }catch(e){ setStatus('Error creando la pregunta.'); }
+                finally{ setSaveControls(); }
+            }
+
+            return { autoSave, manualSave, selectQuestion, addQuestion, deleteQuestion };
+        })();
+    </script>
+    <!-- Contest Rules Modal -->
+    <div id="rules-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div class="bg-neutral-900 text-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-4 border border-white/10">
+            <div class="flex items-start justify-between">
+                <h2 class="text-xl font-bold">Reglas del concurso</h2>
+                <button onclick="document.getElementById('rules-modal').classList.add('hidden')" class="text-white/60 hover:text-white text-xl">&times;</button>
+            </div>
+            <ul class="list-disc list-inside space-y-2 text-md text-white/80">
+                <li>Para poder publicar un concurso, debes agregar al menos <strong>15 preguntas</strong>:</li>
+                <ul class="pl-5 space-y-1">
+                    <li>5 preguntas fáciles</li>
+                    <li>5 preguntas medias</li>
+                    <li>5 preguntas difíciles</li>
+                </ul>
+                <li>Una vez publicado, el concurso <strong>no podrá ser editado</strong>.</li>
+                <li>Para editarlo nuevamente, deberás cambiar el estado a <strong>Borrador</strong>.</li>
+            </ul>
+            <div class="text-right">
+                <button onclick="document.getElementById('rules-modal').classList.add('hidden')"
+                        class="mt-4 inline-flex items-center px-4 py-2 text-sm font-semibold text-neutral-900 bg-yellow-400 rounded-full hover:bg-yellow-300 transition">
+                    Entendido
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auto open rules modal on load
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('rules-modal')?.classList.remove('hidden');
+        });
+    </script>
+
+    <script>
+        async function fetchQuestionSummary() {
+            const contestId = "{{ contest.id }}";
+
+            try {
+                const res = await fetch(`/api/contests/${contestId}/questions/summary`);
+                if (!res.ok) throw new Error('Error fetching summary');
+                const data = await res.json();
+
+                ['easy', 'medium', 'hard'].forEach(level => {
+                    const el = document.querySelector(`[data-count="${level}"]`);
+                    if (el) el.textContent = data[level] || 0;
+                });
+            } catch (err) {
+                console.error('Error loading question summary:', err);
+            }
+        }
+
+        // Call on load
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchQuestionSummary();
+        });
+    </script>
+{% endblock %}

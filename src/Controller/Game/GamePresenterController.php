@@ -1,11 +1,10 @@
 <?php
 
-namespace App\Controller;
+namespace App\Controller\Game;
 
 use App\Entity\Game;
 use App\Entity\Round;
 use App\Enum\Joker;
-use App\Repository\RoundRepository;
 use App\Service\Joker\UseJokerService;
 use App\Service\NextRoundService;
 use App\Service\RevealOptionService;
@@ -14,13 +13,9 @@ use App\Service\StartPresenterGameService;
 use App\Service\SubmitAnswerService;
 use App\ValueResolver\GameByIdResolver;
 use App\ValueResolver\GameByPresenterTokenResolver;
-use App\ValueResolver\GameByPublicTokenResolver;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Attribute\ValueResolver;
-use Symfony\Component\Mercure\HubInterface;
-use Symfony\Component\Mercure\Update;
 use Symfony\Component\Routing\Attribute\Route;
 
 class GamePresenterController extends AbstractController

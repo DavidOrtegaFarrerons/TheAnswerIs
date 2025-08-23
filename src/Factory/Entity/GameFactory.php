@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Factory;
+namespace App\Factory\Entity;
 
 use App\Entity\Contest;
 use App\Entity\Game;

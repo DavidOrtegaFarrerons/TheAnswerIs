@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Enum\ContestStatus;
 use App\Repository\ContestRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -43,10 +44,20 @@ class Contest
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
+    #[ORM\ManyToOne(inversedBy: 'contests')]
+    private ?User $createdBy = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $publishedAt = null;
+
+    #[Orm\Column(type: 'string', nullable: true, enumType: ContestStatus::class)]
+    private ?ContestStatus $status;
+
     public function __construct()
     {
         $this->questions = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
+        $this->status = ContestStatus::DRAFT;
     }
 
     public function getId(): ?Uuid
@@ -153,6 +164,39 @@ class Contest
     {
         $this->createdAt = $createdAt;
 
+        return $this;
+    }
+
+    public function getCreatedBy(): ?User
+    {
+        return $this->createdBy;
+    }
+
+    public function setCreatedBy(?User $createdBy): Contest
+    {
+        $this->createdBy = $createdBy;
+        return $this;
+    }
+
+    public function getStatus(): ?ContestStatus
+    {
+        return $this->status;
+    }
+
+    public function setStatus(?ContestStatus $status): Contest
+    {
+        $this->status = $status;
+        return $this;
+    }
+
+    public function getPublishedAt(): ?\DateTimeImmutable
+    {
+        return $this->publishedAt;
+    }
+
+    public function setPublishedAt(?\DateTimeImmutable $publishedAt): Contest
+    {
+        $this->publishedAt = $publishedAt;
         return $this;
     }
 }

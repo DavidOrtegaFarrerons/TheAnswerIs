@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% set routeName = constant('App\\Controller\\GameContestantController::GAME_CONTESTANT_LOBBY_ROUTE_NAME') %}
+{% set routeName = constant('App\\Controller\\Game\\GameContestantController::GAME_CONTESTANT_LOBBY_ROUTE_NAME') %}
 {% set publicUrl = absolute_url(path(routeName, { publicToken: game.publicToken })) %}
 {% block title %}Game Lobby{% endblock %}
 
