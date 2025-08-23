@@ -71,8 +71,7 @@ class ContestController extends AbstractController
         $contestImageUrl = trim((string) $request->request->get('imageUrl', ''));
         $visibility = ContestVisibility::from($request->request->get('visibility', ''));
         if ($contestName === '') {
-            $this->addFlash('danger', 'The name of the contest can\'t be empty.');
-            return $this->redirectToRoute('user_profile', ['userId' => $security->getUser()->getId()]);
+            return $this->json(['message' => 'contest name cannot be empty'], 400);
         }
 
         $contest->setName($contestName);
@@ -84,7 +83,7 @@ class ContestController extends AbstractController
 
         $em->flush();
 
-        return $this->redirectToRoute('edit_contest', ['contest' => $contest->getId()]);
+        return $this->json(['success' => true]);
     }
 
 

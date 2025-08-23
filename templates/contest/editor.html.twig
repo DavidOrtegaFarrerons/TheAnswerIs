@@ -689,6 +689,7 @@
             <form id="contest-settings-form"
                   action="{{ path('update_contest', { contest: contest.id }) }}"
                   method="POST"
+                  data-turbo="false"
                   class="space-y-4">
                 <input type="hidden" name="_token" value="{{ csrf_token('update_contest' ~ contest.id) }}">
 
@@ -734,6 +735,7 @@
                         Cancelar
                     </button>
                     <button type="submit"
+                            id="config-save-btn"
                             class="rounded-full px-4 py-2 bg-yellow-500 text-neutral-900 font-semibold hover:bg-yellow-400">
                         Guardar cambios
                     </button>
@@ -742,6 +744,40 @@
         </div>
     </div>
 
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const form = document.getElementById("contest-settings-form");
+            const saveBtn = document.getElementById("config-save-btn");
+
+            if (!form || !saveBtn) return;
+
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault(); // stop normal form submission (and Turbo)
+
+                const formData = new FormData(form);
+                try {
+                    const response = await fetch(form.action, {
+                        method: "POST",
+                        body: formData,
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest"
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        document.getElementById('settings-modal').classList.add('hidden')
+                        showErrorModal(data.message);
+                    }
+
+                } catch (err) {
+                    console.log(err);
+                }
+                document.getElementById('settings-modal').classList.add('hidden')
+            });
+        });
+    </script>
     <script>
         // Optionally open rules on first load; keep hidden by default now
         // document.getElementById('rules-modal')?.classList.remove('hidden');
