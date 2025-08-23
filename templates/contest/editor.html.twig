@@ -16,7 +16,7 @@
             <aside class="h-full flex flex-col bg-neutral-900/80 backdrop-blur-md shadow-2xl shadow-black/50">
                 <div class="px-4 pt-4 pb-2">
                     <h2 class="text-xl font-bold">Preguntas</h2>
-                    <p class="text-sm text-white/60">{{ questions|length }} total</p>
+                    <p class="text-sm text-white/60">Total de preguntas: <span id="total-questions">{{ questions|length }}</span></p>
                 </div>
                 <div class="mt-2 text-sm text-white/70 space-y-1 px-4 pt-4 pb-2 mb-5" id="difficulty-counts">
                     <p><span class="text-white font-semibold" data-count="easy">0</span> fáciles</p>
@@ -29,13 +29,27 @@
                         <div class="relative group">
                             <button
                                 type="button"
-                                class="w-full h-12 rounded-xl border-2 text-left px-3 transition-all duration-150 pr-10
+                                class="w-full h-12 rounded-xl border-2 text-left px-3 transition-all duration-150 pr-10 flex items-center justify-between
             {{ q.id == currentQuestion.id ? 'border-yellow-400 bg-yellow-400/10 ring-2 ring-yellow-300' : 'border-blue-600 bg-neutral-800/70 hover:bg-blue-600/30' }}"
                                 onclick="EditorUI.selectQuestion('{{ q.id }}')"
                                 title="{{ q.title|default('Sin título') }}"
                             >
-                                <span class="text-sm font-semibold">Pregunta {{ loop.index }}</span>
-                                <span class="block text-xs text-white/70 truncate">{{ q.title|default('Sin título') }}</span>
+                                <div class="flex-1 overflow-hidden">
+                                    <span class="text-sm font-semibold block">Pregunta {{ loop.index }}</span>
+                                    <span class="block text-xs text-white/70 truncate">{{ q.title|default('Sin título') }}</span>
+                                </div>
+
+                                {# Difficulty chip #}
+                                {% if q.difficulty is not null %}
+                                    <span class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold
+                    {% if q.difficulty.value == 'easy' %} bg-green-600/30 text-green-300
+                    {% elseif q.difficulty.value == 'medium' %} bg-yellow-600/30 text-yellow-300
+                    {% elseif q.difficulty.value == 'hard' %} bg-red-600/30 text-red-300
+                    {% else %} bg-neutral-600/30 text-neutral-300
+                    {% endif %}">
+                    {{ q.difficulty.value|capitalize }}
+                </span>
+                                {% endif %}
                             </button>
 
                             <!-- Trash Button (visible on hover) -->
@@ -307,8 +321,7 @@
 
 
     <script>
-        /** Same controller as before, trimmed to fields you kept (no points/time). */
-        const EditorUI = (() => {
+            const EditorUI = (() => {
             const root = document.getElementById('contest-editor');
             const statusEl = document.querySelector('[data-status]');
             const saveBtn = document.getElementById('save-button');
@@ -319,168 +332,246 @@
 
             function setStatus(text){ if(statusEl) statusEl.textContent = text; }
             function setSaveControls(){
-                if (failedSaves > 0){ saveBtn.disabled = false; saveMsg.classList.add('hidden'); }
-                else if (saving === 0){ saveBtn.disabled = true; saveMsg.classList.remove('hidden'); }
-            }
+            if (failedSaves > 0){ saveBtn.disabled = false; saveMsg.classList.add('hidden'); }
+            else if (saving === 0){ saveBtn.disabled = true; saveMsg.classList.remove('hidden'); }
+        }
             function contestId(){ return root?.dataset.contestId; }
             function questionId(){ return root?.dataset.questionId; }
             function csrf(){ return root?.dataset.csrf; }
             function fieldErrorEl(field){ return document.querySelector(`[data-error-for="${field}"]`); }
 
+            /** === Sidebar Helpers === */
+            async function fetchQuestionSummary() {
+            const cid = contestId();
+            try {
+            const res = await fetch(`/api/contests/${cid}/questions/summary`);
+            if (!res.ok) throw new Error('Error fetching summary');
+            const data = await res.json();
+
+            ['easy', 'medium', 'hard'].forEach(level => {
+            const el = document.querySelector(`[data-count="${level}"]`);
+            if (el) el.textContent = data[level] || 0;
+        });
+
+            const totalEl = document.querySelector('#total-questions');
+            if (totalEl) totalEl.textContent = data.total || 0;
+        } catch (err) {
+            console.error('Error loading question summary:', err);
+        }
+        }
+
+            function updateSidebarTitle(qid, newTitle) {
+            const el = document.querySelector(
+            `#question-list button[onclick*="${qid}"] .truncate`
+            );
+            if (el) el.textContent = newTitle || 'Sin título';
+        }
+
+            function updateSidebarChip(qid, difficulty) {
+            const chip = document.querySelector(
+            `#question-list button[onclick*="${qid}"] span.rounded-full`
+            );
+            if (!chip) return;
+            chip.textContent = difficulty ? difficulty.charAt(0).toUpperCase() + difficulty.slice(1) : '';
+            chip.className = "ml-2 px-2 py-0.5 rounded-full text-xs font-semibold " + (
+            difficulty === 'easy' ? "bg-green-600/30 text-green-300" :
+            difficulty === 'medium' ? "bg-yellow-600/30 text-yellow-300" :
+            difficulty === 'hard' ? "bg-red-600/30 text-red-300" :
+            "bg-neutral-600/30 text-neutral-300"
+            );
+        }
+
+            function removeSidebarQuestion(qid) {
+            const wrapper = document.querySelector(
+            `#question-list button[onclick*="${qid}"]`
+            )?.parentElement;
+            if (wrapper) wrapper.remove();
+            fetchQuestionSummary();
+        }
+
+            /** === Saving === */
             async function autoSave(inputEl){
-                const cid = contestId(), qid = questionId(); if(!cid || !qid) return;
-                const field = inputEl.dataset.field, value = inputEl.value;
+            const cid = contestId(), qid = questionId(); if(!cid || !qid) return;
+            const field = inputEl.dataset.field, value = inputEl.value;
 
-                saving++; setStatus('guardando…'); saveBtn.disabled = true; saveMsg.classList.add('hidden');
+            saving++; setStatus('guardando…'); saveBtn.disabled = true; saveMsg.classList.add('hidden');
 
-                try{
-                    const res = await fetch(`/api/contests/${encodeURIComponent(cid)}/questions/${encodeURIComponent(qid)}`,{
-                        method:'PATCH',
-                        headers:{ 'Content-Type':'application/json','X-CSRF-TOKEN': csrf() },
-                        body: JSON.stringify({ field, value })
-                    });
-                    const data = await res.json().catch(()=> ({}));
-                    if(!res.ok){
-                        failedSaves++;
-                        const el = fieldErrorEl(field); if(el){ el.textContent = data?.message || 'No se pudo guardar este campo.'; el.classList.remove('hidden'); }
-                    }else{
-                        const el = fieldErrorEl(field); if(el){ el.textContent=''; el.classList.add('hidden'); }
-                        if (data && typeof data.value !== 'undefined') inputEl.value = data.value;
-                    }
-                }catch(e){
-                    failedSaves++;
-                    const el = fieldErrorEl(field); if(el){ el.textContent='Error de red. Intenta de nuevo.'; el.classList.remove('hidden'); }
-                }finally{
-                    saving = Math.max(0, saving-1);
-                    setStatus(saving===0 ? 'Guardado' : 'guardando…');
-                    setSaveControls();
-                }
-            }
+            try{
+            const res = await fetch(`/api/contests/${encodeURIComponent(cid)}/questions/${encodeURIComponent(qid)}`,{
+            method:'PATCH',
+            headers:{ 'Content-Type':'application/json','X-CSRF-TOKEN': csrf() },
+            body: JSON.stringify({ field, value })
+        });
+            const data = await res.json().catch(()=> ({}));
+            if(!res.ok){
+            failedSaves++;
+            const el = fieldErrorEl(field); if(el){ el.textContent = data?.message || 'No se pudo guardar este campo.'; el.classList.remove('hidden'); }
+        }else{
+            const el = fieldErrorEl(field); if(el){ el.textContent=''; el.classList.add('hidden'); }
+            if (data && typeof data.value !== 'undefined') inputEl.value = data.value;
 
-            async function deleteQuestion(questionId) {
-                const cid = contestId(); if(!cid) return;
-                if (!cid || !questionId) return;
-
-                const confirmed = confirm('¿Seguro que quieres eliminar esta pregunta? Esta acción no se puede deshacer.');
-                if (!confirmed) return;
-
-                try {
-                    const res = await fetch(`/api/contests/${cid}/questions/${questionId}`, {
-                        method: 'DELETE',
-                        headers: { 'X-CSRF-TOKEN': csrf() }
-                    });
-
-                    if (!res.ok) {
-                        showErrorModal(data.message || 'Operación no válida');
-                        return;
-                    }
-
-                    // Reload the page or fetch the list again
-                    location.reload(); // simplest option
-                } catch (e) {
-                    alert('Error de red al eliminar.');
-                }
-            }
-
-            function clearFieldErrors(){
-                document.querySelectorAll('[data-error-for]').forEach(el => { el.textContent=''; el.classList.add('hidden'); });
-            }
-
-            function serializeForm(){
-                return {
-                    title: document.querySelector('[data-field="title"]')?.value || '',
-                    optionA: document.querySelector('[data-field="optionA"]')?.value || '',
-                    optionB: document.querySelector('[data-field="optionB"]')?.value || '',
-                    optionC: document.querySelector('[data-field="optionC"]')?.value || '',
-                    optionD: document.querySelector('[data-field="optionD"]')?.value || '',
-                    correctAnswer: document.querySelector('[data-field="correctAnswer"]')?.value || '',
-                    difficulty: document.querySelector('[data-field="difficulty"]')?.value || ''
-                };
-            }
+            // === UI sync ===
+            if (field === 'title') updateSidebarTitle(qid, value);
+            if (field === 'difficulty') { updateSidebarChip(qid, value); fetchQuestionSummary(); }
+        }
+        }catch(e){
+            failedSaves++;
+            const el = fieldErrorEl(field); if(el){ el.textContent='Error de red. Intenta de nuevo.'; el.classList.remove('hidden'); }
+        }finally{
+            saving = Math.max(0, saving-1);
+            setStatus(saving===0 ? 'Guardado' : 'guardando…');
+            setSaveControls();
+        }
+        }
 
             async function manualSave(){
-                const cid = contestId(), qid = questionId(); if(!cid || !qid) return;
-                const payload = serializeForm();
-                saving++; setStatus('guardando…'); saveBtn.disabled = true;
+            const cid = contestId(), qid = questionId(); if(!cid || !qid) return;
+            const payload = serializeForm();
+            saving++; setStatus('guardando…'); saveBtn.disabled = true;
 
-                try{
-                    const res = await fetch(`/api/contests/${encodeURIComponent(cid)}/questions/${encodeURIComponent(qid)}`,{
-                        method:'PUT',
-                        headers:{ 'Content-Type':'application/json','X-CSRF-TOKEN': csrf() },
-                        body: JSON.stringify(payload)
-                    });
-                    const data = await res.json().catch(()=> ({}));
-                    if(!res.ok){ failedSaves = 1; setStatus(data?.message || 'Errores al guardar.'); }
-                    else { failedSaves = 0; clearFieldErrors(); setStatus('Guardado'); }
-                }catch(e){ failedSaves = 1; setStatus('Error de red.'); }
-                finally{ saving = Math.max(0, saving-1); setSaveControls(); }
-            }
+            try{
+            const res = await fetch(`/api/contests/${encodeURIComponent(cid)}/questions/${encodeURIComponent(qid)}`,{
+            method:'PUT',
+            headers:{ 'Content-Type':'application/json','X-CSRF-TOKEN': csrf() },
+            body: JSON.stringify(payload)
+        });
+            const data = await res.json().catch(()=> ({}));
+            if(!res.ok){ failedSaves = 1; setStatus(data?.message || 'Errores al guardar.'); }
+            else { failedSaves = 0; clearFieldErrors(); setStatus('Guardado'); fetchQuestionSummary(); }
+        }catch(e){ failedSaves = 1; setStatus('Error de red.'); }
+            finally{ saving = Math.max(0, saving-1); setSaveControls(); }
+        }
 
+            function clearFieldErrors(){
+            document.querySelectorAll('[data-error-for]').forEach(el => { el.textContent=''; el.classList.add('hidden'); });
+        }
+
+            function serializeForm(){
+            return {
+            title: document.querySelector('[data-field="title"]')?.value || '',
+            optionA: document.querySelector('[data-field="optionA"]')?.value || '',
+            optionB: document.querySelector('[data-field="optionB"]')?.value || '',
+            optionC: document.querySelector('[data-field="optionC"]')?.value || '',
+            optionD: document.querySelector('[data-field="optionD"]')?.value || '',
+            correctAnswer: document.querySelector('[data-field="correctAnswer"]')?.value || '',
+            difficulty: document.querySelector('[data-field="difficulty"]')?.value || ''
+        };
+        }
+
+            /** === Question actions === */
             async function selectQuestion(newQid){
-                const cid = contestId(); if(!cid) return;
-                try{
-                    setStatus('cargando…');
-                    const res = await fetch(`/api/contests/${encodeURIComponent(cid)}/questions/${encodeURIComponent(newQid)}`,
-                        { headers:{ 'Accept':'application/json' }});
-                    const q = await res.json();
+            const cid = contestId(); if(!cid) return;
+            try{
+            setStatus('cargando…');
+            const res = await fetch(`/api/contests/${encodeURIComponent(cid)}/questions/${encodeURIComponent(newQid)}`,
+        { headers:{ 'Accept':'application/json' }});
+            const q = await res.json();
 
-                    const map = {
-                        title: q.title ?? '',
-                        optionA: q.optionA ?? '',
-                        optionB: q.optionB ?? '',
-                        optionC: q.optionC ?? '',
-                        optionD: q.optionD ?? '',
-                        correctAnswer:  q.correctAnswer ?? '',
-                        difficulty: q.difficulty ?? ''
-                    };
-                    for (const [k,v] of Object.entries(map)){
-                        const el = document.querySelector(`[data-field="${k}"]`);
-                        if(!el) continue;
-                        if(el.tagName==='SELECT') el.value = v; else el.value = v;
-                    }
+            const map = {
+            title: q.title ?? '',
+            optionA: q.optionA ?? '',
+            optionB: q.optionB ?? '',
+            optionC: q.optionC ?? '',
+            optionD: q.optionD ?? '',
+            correctAnswer:  q.correctAnswer ?? '',
+            difficulty: q.difficulty ?? ''
+        };
+            for (const [k,v] of Object.entries(map)){
+            const el = document.querySelector(`[data-field="${k}"]`);
+            if(!el) continue;
+            if(el.tagName==='SELECT') el.value = v; else el.value = v;
+        }
 
-                    // Update highlight in rail (simple reset + best-effort)
-                    document.querySelectorAll('#question-list > button').forEach(btn=>{
-                        btn.classList.remove('border-yellow-400','bg-yellow-400/10','ring-2','ring-yellow-300');
-                        if (btn.getAttribute('onclick')?.includes(newQid)) {
-                            btn.classList.add('border-yellow-400','bg-yellow-400/10','ring-2','ring-yellow-300');
-                        }
-                    });
+            document.querySelectorAll('#question-list button').forEach(btn=>{
+            btn.classList.remove(
+            'border-yellow-400','bg-yellow-400/10','ring-2','ring-yellow-300'
+            );
+            btn.classList.add(
+            'border-blue-600','bg-neutral-800/70','hover:bg-blue-600/30'
+            );
+        });
 
-                    root.dataset.questionId = String(newQid);
-                    failedSaves = 0; clearFieldErrors(); setStatus('Guardado'); setSaveControls();
-                }catch(e){ setStatus('No se pudo cargar la pregunta.'); }
-            }
+            const selectedBtn = document.querySelector(
+            `#question-list button[onclick*="${newQid}"]`
+            );
+            if (selectedBtn) {
+            selectedBtn.classList.remove(
+            'border-blue-600','bg-neutral-800/70','hover:bg-blue-600/30'
+            );
+            selectedBtn.classList.add(
+            'border-yellow-400','bg-yellow-400/10','ring-2','ring-yellow-300'
+            );
+        }
+
+            root.dataset.questionId = String(newQid);
+            failedSaves = 0; clearFieldErrors(); setStatus('Guardado'); setSaveControls();
+        }catch(e){ setStatus('No se pudo cargar la pregunta.'); }
+        }
 
             async function addQuestion(){
-                const cid = contestId(); if(!cid) return;
-                setStatus('creando…');
-                try{
-                    const res = await fetch(`/api/contests/${encodeURIComponent(cid)}/questions`,{
-                        method:'POST',
-                        headers:{ 'Content-Type':'application/json','X-CSRF-TOKEN': csrf() },
-                        body: JSON.stringify({})
-                    });
-                    const q = await res.json();
-                    if(!res.ok) throw new Error(q?.message || 'No se pudo crear');
+            const cid = contestId(); if(!cid) return;
+            setStatus('creando…');
+            try{
+            const res = await fetch(`/api/contests/${encodeURIComponent(cid)}/questions`,{
+            method:'POST',
+            headers:{ 'Content-Type':'application/json','X-CSRF-TOKEN': csrf() },
+            body: JSON.stringify({})
+        });
+            const q = await res.json();
+            if(!res.ok) throw new Error(q?.message || 'No se pudo crear');
 
-                    const list = document.getElementById('question-list');
-                    const btn = document.createElement('button');
-                    btn.type='button';
-                    btn.className='w-full h-12 rounded-xl border-2 text-left px-3 transition-all duration-150 border-yellow-400 bg-yellow-400/10 ring-2 ring-yellow-300';
-                    btn.onclick = () => EditorUI.selectQuestion(q.id);
-                    btn.title='Sin título';
-                    const idx = list.querySelectorAll('button').length; // after existing + nueva
-                    btn.innerHTML = `<span class="text-sm font-semibold">Pregunta ${idx}</span><span class="block text-xs text-white/70 truncate">Sin título</span>`;
-                    list.insertBefore(btn, list.lastElementChild);
+            const list = document.getElementById('question-list');
 
-                    await selectQuestion(q.id);
-                }catch(e){ setStatus('Error creando la pregunta.'); }
-                finally{ setSaveControls(); }
-            }
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group';
+            wrapper.innerHTML = `
+                    <button type="button"
+                        class="w-full h-12 rounded-xl border-2 text-left px-3 transition-all duration-150 border-yellow-400 bg-yellow-400/10 ring-2 ring-yellow-300 flex items-center justify-between"
+                        onclick="EditorUI.selectQuestion('${q.id}')"
+                        title="Sin título">
+                        <div class="flex-1 overflow-hidden">
+                            <span class="text-sm font-semibold block">Pregunta ${list.querySelectorAll('button').length}</span>
+                            <span class="block text-xs text-white/70 truncate">Sin título</span>
+                        </div>
+                        <span class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-neutral-600/30 text-neutral-300"></span>
+                    </button>
+                    <button type="button"
+                        onclick="EditorUI.deleteQuestion('${q.id}')"
+                        title="Eliminar pregunta"
+                        class="absolute top-1 right-1 h-8 w-8 flex items-center justify-center text-white/50 hover:text-red-500 hover:bg-red-500/10 rounded-full transition opacity-0 group-hover:opacity-100">🗑️</button>
+                `;
+            list.insertBefore(wrapper, list.lastElementChild);
+
+            await selectQuestion(q.id);
+            await fetchQuestionSummary();
+        }catch(e){ setStatus('Error creando la pregunta.'); }
+            finally{ setSaveControls(); }
+        }
+
+            async function deleteQuestion(qid) {
+            const cid = contestId(); if(!cid || !qid) return;
+            const confirmed = confirm('¿Seguro que quieres eliminar esta pregunta? Esta acción no se puede deshacer.');
+            if (!confirmed) return;
+            try {
+            const res = await fetch(`/api/contests/${cid}/questions/${qid}`, {
+            method: 'DELETE',
+            headers: { 'X-CSRF-TOKEN': csrf() }
+        });
+            if (!res.ok) throw new Error();
+            removeSidebarQuestion(qid);
+        } catch (e) {
+            alert('Error de red al eliminar.');
+        }
+        }
 
             return { autoSave, manualSave, selectQuestion, addQuestion, deleteQuestion };
         })();
+
+            // Refresh counters on load
+            window.addEventListener('DOMContentLoaded', () => {
+            fetchQuestionSummary();
+        });
+
     </script>
     <!-- Contest Rules Modal -->
     <div id="rules-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
