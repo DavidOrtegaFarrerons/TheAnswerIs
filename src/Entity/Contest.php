@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Enum\ContestStatus;
+use App\Enum\ContestVisibility;
 use App\Repository\ContestRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -52,6 +53,9 @@ class Contest
 
     #[Orm\Column(type: 'string', nullable: true, enumType: ContestStatus::class)]
     private ?ContestStatus $status;
+
+    #[Orm\Column(type: 'string', nullable: true, enumType: ContestVisibility::class)]
+    private ?ContestVisibility $visibility;
 
     public function __construct()
     {
@@ -197,6 +201,17 @@ class Contest
     public function setPublishedAt(?\DateTimeImmutable $publishedAt): Contest
     {
         $this->publishedAt = $publishedAt;
+        return $this;
+    }
+
+    public function getVisibility(): ?ContestVisibility
+    {
+        return $this->visibility;
+    }
+
+    public function setVisibility(?ContestVisibility $visibility): Contest
+    {
+        $this->visibility = $visibility;
         return $this;
     }
 }

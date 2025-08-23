@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Contest;
 use App\Enum\ContestStatus;
+use App\Enum\ContestVisibility;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -37,6 +38,8 @@ class ContestController extends AbstractController
         }
 
         $contestName = trim((string) $request->request->get('name', ''));
+        $contestImageUrl = trim((string) $request->request->get('imageUrl', ''));
+        $visibility = ContestVisibility::from($request->request->get('visibility', ''));
         if ($contestName === '') {
             $this->addFlash('danger', 'The name of the contest can\'t be empty.');
             return $this->redirectToRoute('user_profile', ['userId' => $security->getUser()->getId()]);
@@ -44,12 +47,41 @@ class ContestController extends AbstractController
 
         $contest = new Contest();
         $contest->setName($contestName);
-        $contest->setImageUrl('');
+        $contest->setImageUrl($contestImageUrl);
+        $contest->setVisibility($visibility);
         $contest->setTotalQuestions(15);
         $contest->setCreatedBy($security->getUser());
         $contest->setStatus(ContestStatus::DRAFT);
 
         $em->persist($contest);
+        $em->flush();
+
+        return $this->redirectToRoute('edit_contest', ['contest' => $contest->getId()]);
+    }
+
+    #[Route('/contests/edit/{contest}', name: 'update_contest', methods: ['POST'])]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    public function updateAction(
+        Request $request,
+        Security $security,
+        Contest $contest,
+        EntityManagerInterface $em
+    ): Response {
+        $contestName = trim((string) $request->request->get('name', ''));
+        $contestImageUrl = trim((string) $request->request->get('imageUrl', ''));
+        $visibility = ContestVisibility::from($request->request->get('visibility', ''));
+        if ($contestName === '') {
+            $this->addFlash('danger', 'The name of the contest can\'t be empty.');
+            return $this->redirectToRoute('user_profile', ['userId' => $security->getUser()->getId()]);
+        }
+
+        $contest->setName($contestName);
+        $contest->setImageUrl($contestImageUrl);
+        $contest->setVisibility($visibility);
+        $contest->setTotalQuestions(15);
+        $contest->setCreatedBy($security->getUser());
+        $contest->setStatus(ContestStatus::DRAFT);
+
         $em->flush();
 
         return $this->redirectToRoute('edit_contest', ['contest' => $contest->getId()]);
@@ -113,6 +145,7 @@ class ContestController extends AbstractController
 
         $contest->setStatus(ContestStatus::PUBLISHED);
         $em->persist($contest);
+        $em->flush();
 
         return $this->json(['status' => ContestStatus::PUBLISHED->value]);
     }
@@ -127,6 +160,7 @@ class ContestController extends AbstractController
 
         $contest->setStatus(ContestStatus::DRAFT);
         $em->persist($contest);
+        $em->flush();
 
         return $this->json(['status' => ContestStatus::DRAFT->value]);
     }

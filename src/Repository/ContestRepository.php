@@ -3,6 +3,8 @@
 namespace App\Repository;
 
 use App\Entity\Contest;
+use App\Enum\ContestStatus;
+use App\Enum\ContestVisibility;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -19,6 +21,10 @@ class ContestRepository extends ServiceEntityRepository
     public function getLatestContests(int $contestsNumber)
     {
         return $this->createQueryBuilder('c')
+            ->where('c.status = :published')
+            ->andWhere('c.visibility = :public')
+            ->setParameter('published', ContestStatus::PUBLISHED->value)
+            ->setParameter('public', ContestVisibility::PUBLIC->value)
             ->orderBy('c.createdAt', 'DESC')
             ->setMaxResults($contestsNumber)
             ->getQuery()
