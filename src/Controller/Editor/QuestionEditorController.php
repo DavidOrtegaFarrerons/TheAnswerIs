@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Controller;
+namespace App\Controller\Editor;
 
 use App\Dto\Editor\QuestionFieldDto;
 use App\Entity\Contest;
@@ -11,16 +11,16 @@ use Doctrine\ORM\EntityManagerInterface;
 use http\Exception\InvalidArgumentException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-class QuestionController extends AbstractController
+#[Route('/api/contests/{contest}/questions')]
+#[IsGranted('IS_AUTHENTICATED_FULLY')]
+class QuestionEditorController extends AbstractController
 {
-    #[Route('/api/contests/{contest}/questions/summary', methods: ['GET'])]
-    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    #[Route('/summary', methods: ['GET'])]
     public function summary(Contest $contest)
     {
         if ($contest->getCreatedBy() !== $this->getUser()) {
@@ -50,15 +50,13 @@ class QuestionController extends AbstractController
 
     }
 
-    #[Route('/api/contests/{contest}/questions/{question}', methods: ['GET'])]
-    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    #[Route('/{question}', methods: ['GET'])]
     public function read(Question $question, QuestionDtoFactory $questionDtoFactory): JsonResponse
     {
         return $this->json($questionDtoFactory->fromEntity($question));
     }
 
-    #[Route('/api/contests/{contest}/questions', methods: ['POST'])]
-    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    #[Route('', methods: ['POST'])]
     public function create(Contest $contest, EntityManagerInterface $em)
     {
         $question = new Question();
@@ -71,8 +69,7 @@ class QuestionController extends AbstractController
         return $this->json(['id' => $question->getId()], 201);
     }
 
-    #[Route('/api/contests/{contest}/questions/{question}', methods: ['PATCH'])]
-    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    #[Route('/{question}', methods: ['PATCH'])]
     public function update(
         Question $question,
         #[MapRequestPayload] QuestionFieldDto $dto,
@@ -92,8 +89,7 @@ class QuestionController extends AbstractController
         return $this->json(['id' => $question->getId()], 201);
     }
 
-    #[Route('/api/contests/{contest}/questions/{question}', methods: ['DELETE'])]
-    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    #[Route('/{question}', methods: ['DELETE'])]
     public function delete(
         Contest $contest,
         Question $question,
